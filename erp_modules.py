@@ -948,8 +948,9 @@ class SalesCRMModule(QWidget):
     - Customer analytics and performance metrics
     """
     
-    def __init__(self, parent: Optional[QWidget] = None):
+    def __init__(self, user, parent: Optional[QWidget] = None):
         super().__init__(parent)
+        self.user = user
         self.setup_ui()
         self.load_data()
         
@@ -1254,9 +1255,10 @@ class AssetManagementModule(QWidget):
     - Asset performance metrics
     """
     
-    def __init__(self, parent: Optional[QWidget] = None):
+    def __init__(self, user, parent: Optional[QWidget] = None):
         super().__init__(parent)
         self.setup_ui()
+        self.user = user
         self.load_data()
         
         # Set up timer for periodic updates

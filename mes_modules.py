@@ -1254,8 +1254,9 @@ class ResourceAllocationModule(QWidget):
     - Capacity planning and optimization
     """
     
-    def __init__(self, parent: Optional[QWidget] = None):
+    def __init__(self, user, parent: Optional[QWidget] = None):
         super().__init__(parent)
+        self.user = user
         self.setup_ui()
         self.load_data()
         
@@ -1587,8 +1588,9 @@ class ProductTrackingModule(QWidget):
     - Audit trail export functionality
     """
     
-    def __init__(self, parent: Optional[QWidget] = None):
+    def __init__(self, user, parent: Optional[QWidget] = None):
         super().__init__(parent)
+        self.user = user
         self.setup_ui()
         self.load_data()
         
@@ -1961,8 +1963,9 @@ class MaintenanceManagementModule(QWidget):
     - Cost analysis and reporting
     """
     
-    def __init__(self, parent: Optional[QWidget] = None):
+    def __init__(self, user, parent: Optional[QWidget] = None):
         super().__init__(parent)
+        self.user = user
         self.setup_ui()
         self.load_data()
         
@@ -2257,8 +2260,9 @@ class LaborManagementModule(QWidget):
     - Attendance and labor cost analysis
     """
     
-    def __init__(self, parent: Optional[QWidget] = None):
+    def __init__(self, user, parent: Optional[QWidget] = None):
         super().__init__(parent)
+        self.user = user
         self.setup_ui()
         self.load_data()
         

@@ -90,7 +90,7 @@ class LoginDialog(QDialog):
     def setup_ui(self):
         """Set up the user interface for the login dialog."""
         self.setWindowTitle("NextFactory - User Authentication")
-        self.setFixedSize(400, 300)
+        self.setFixedSize(800, 600)
         self.setModal(True)
         
         # Main layout
