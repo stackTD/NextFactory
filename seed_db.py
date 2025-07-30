@@ -28,6 +28,7 @@ Created: 2024
 
 import argparse
 import logging
+import random
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 
@@ -147,19 +148,17 @@ class DataSeeder:
                 for role_data in roles_data:
                     existing_role = get_role_by_name(session, role_data['name'].value)
                     
-                    if existing_role and not self.force_recreate:
-                        logger.info(f"Role '{role_data['display_name']}' already exists, skipping")
-                        continue
-                    
                     if existing_role and self.force_recreate:
                         session.delete(existing_role)
+                        session.commit()  # Commit the deletion
                         logger.info(f"Removed existing role '{role_data['display_name']}'")
                     
-                    # Create new role
-                    role = Role(**role_data)
-                    session.add(role)
-                    self.stats['roles_created'] += 1
-                    logger.info(f"Created role: {role_data['display_name']}")
+                    if not existing_role or self.force_recreate:
+                        # Create new role
+                        role = Role(**role_data)
+                        session.add(role)
+                        self.stats['roles_created'] += 1
+                        logger.info(f"Created role: {role_data['display_name']}")
                 
             return True
             
@@ -226,33 +225,31 @@ class DataSeeder:
                 for user_data in users_data:
                     existing_user = get_user_by_username(session, user_data['username'])
                     
-                    if existing_user and not self.force_recreate:
-                        logger.info(f"User '{user_data['username']}' already exists, skipping")
-                        continue
-                    
                     if existing_user and self.force_recreate:
                         session.delete(existing_user)
+                        session.commit()  # Commit the deletion
                         logger.info(f"Removed existing user '{user_data['username']}'")
                     
-                    # Get role for user
-                    role = get_role_by_name(session, user_data['role_name'])
-                    if not role:
-                        logger.error(f"Role '{user_data['role_name']}' not found for user '{user_data['username']}'")
-                        continue
-                    
-                    # Create new user
-                    user = User(
-                        username=user_data['username'],
-                        email=user_data['email'],
-                        first_name=user_data['first_name'],
-                        last_name=user_data['last_name'],
-                        role_id=role.id,
-                    )
-                    user.set_password(user_data['password'])
-                    
-                    session.add(user)
-                    self.stats['users_created'] += 1
-                    logger.info(f"Created user: {user_data['username']} ({user_data['role_name']})")
+                    if not existing_user or self.force_recreate:
+                        # Get role for user
+                        role = get_role_by_name(session, user_data['role_name'])
+                        if not role:
+                            logger.error(f"Role '{user_data['role_name']}' not found for user '{user_data['username']}'")
+                            continue
+                        
+                        # Create new user
+                        user = User(
+                            username=user_data['username'],
+                            email=user_data['email'],
+                            first_name=user_data['first_name'],
+                            last_name=user_data['last_name'],
+                            role_id=role.id,
+                        )
+                        user.set_password(user_data['password'])
+                        
+                        session.add(user)
+                        self.stats['users_created'] += 1
+                        logger.info(f"Created user: {user_data['username']} ({user_data['role_name']})")
                 
             return True
             
@@ -437,19 +434,17 @@ class DataSeeder:
                         item_code=item_data['item_code']
                     ).first()
                     
-                    if existing_item and not self.force_recreate:
-                        logger.info(f"Inventory item '{item_data['item_code']}' already exists, skipping")
-                        continue
-                    
                     if existing_item and self.force_recreate:
                         session.delete(existing_item)
+                        session.commit()  # Commit the deletion
                         logger.info(f"Removed existing inventory item '{item_data['item_code']}'")
                     
-                    # Create new inventory item
-                    item = InventoryItem(**item_data)
-                    session.add(item)
-                    self.stats['inventory_created'] += 1
-                    logger.info(f"Created inventory item: {item_data['item_code']} - {item_data['item_name']}")
+                    if not existing_item or self.force_recreate:
+                        # Create new inventory item
+                        item = InventoryItem(**item_data)
+                        session.add(item)
+                        self.stats['inventory_created'] += 1
+                        logger.info(f"Created inventory item: {item_data['item_code']} - {item_data['item_name']}")
                 
             return True
             
@@ -458,6 +453,236 @@ class DataSeeder:
             self.stats['errors'] += 1
             return False
     
+    def create_sample_erp_mes_data(self) -> bool:
+        """
+        Create sample data for ERP and MES modules.
+        
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        logger.info("Creating sample ERP and MES data...")
+        
+        try:
+            with get_db_session() as session:
+                # Import the new models here to avoid circular imports
+                from models import (
+                    Supplier, PurchaseOrder, PurchaseOrderItem, OrderStatusEnum, PriorityEnum,
+                    ProductionTask, TaskStatusEnum, SensorData, SensorDataType,
+                    QualityCheck, get_user_by_username, get_inventory_items
+                )
+                
+                # Get existing users for assignments
+                admin_user = get_user_by_username(session, 'admin')
+                manager_user = get_user_by_username(session, 'manager')
+                operator_user = get_user_by_username(session, 'operator')
+                
+                if not all([admin_user, manager_user, operator_user]):
+                    logger.error("Required users not found for ERP/MES data")
+                    return False
+                
+                # Create sample suppliers
+                suppliers_data = [
+                    {
+                        'supplier_code': 'SUP001',
+                        'name': 'MetalWorks Inc.',
+                        'contact_person': 'John Smith',
+                        'email': 'orders@metalworks.com',
+                        'phone': '+1-555-0123',
+                        'address': '123 Industrial Blvd, Metal City, MC 12345',
+                        'rating': 4.5,
+                    },
+                    {
+                        'supplier_code': 'SUP002',
+                        'name': 'Aluminum Supply Co.',
+                        'contact_person': 'Jane Doe',
+                        'email': 'sales@aluminumsupply.com',
+                        'phone': '+1-555-0124',
+                        'address': '456 Supply Street, Alum Town, AT 67890',
+                        'rating': 4.2,
+                    },
+                    {
+                        'supplier_code': 'SUP003',
+                        'name': 'LubeTech Solutions',
+                        'contact_person': 'Mike Johnson',
+                        'email': 'support@lubetech.com',
+                        'phone': '+1-555-0125',
+                        'address': '789 Chemical Way, Lube City, LC 54321',
+                        'rating': 4.8,
+                    },
+                ]
+                
+                for supplier_data in suppliers_data:
+                    existing_supplier = session.query(Supplier).filter_by(
+                        supplier_code=supplier_data['supplier_code']
+                    ).first()
+                    
+                    if not existing_supplier or self.force_recreate:
+                        if existing_supplier and self.force_recreate:
+                            session.delete(existing_supplier)
+                        
+                        supplier = Supplier(**supplier_data)
+                        session.add(supplier)
+                        logger.info(f"Created supplier: {supplier_data['name']}")
+                
+                session.commit()
+                
+                # Create sample production tasks
+                tasks_data = [
+                    {
+                        'task_number': 'TSK001',
+                        'title': 'Machine Setup for Product A',
+                        'description': 'Configure CNC machine for new product line A manufacturing',
+                        'priority': PriorityEnum.HIGH,
+                        'status': TaskStatusEnum.IN_PROGRESS,
+                        'assigned_to_id': operator_user.id,
+                        'planned_start': datetime.utcnow() + timedelta(hours=1),
+                        'planned_end': datetime.utcnow() + timedelta(hours=4),
+                        'estimated_hours': 3.0,
+                        'created_by_id': manager_user.id,
+                    },
+                    {
+                        'task_number': 'TSK002',
+                        'title': 'Quality Inspection - Batch 2024-001',
+                        'description': 'Inspect finished goods from batch 2024-001',
+                        'priority': PriorityEnum.MEDIUM,
+                        'status': TaskStatusEnum.PLANNED,
+                        'assigned_to_id': operator_user.id,
+                        'planned_start': datetime.utcnow() + timedelta(hours=6),
+                        'planned_end': datetime.utcnow() + timedelta(hours=8),
+                        'estimated_hours': 2.0,
+                        'created_by_id': manager_user.id,
+                    },
+                    {
+                        'task_number': 'TSK003',
+                        'title': 'Preventive Maintenance - Press #1',
+                        'description': 'Scheduled maintenance on hydraulic press #1',
+                        'priority': PriorityEnum.URGENT,
+                        'status': TaskStatusEnum.COMPLETED,
+                        'assigned_to_id': operator_user.id,
+                        'planned_start': datetime.utcnow() - timedelta(hours=8),
+                        'planned_end': datetime.utcnow() - timedelta(hours=4),
+                        'actual_start': datetime.utcnow() - timedelta(hours=8),
+                        'actual_end': datetime.utcnow() - timedelta(hours=5),
+                        'estimated_hours': 4.0,
+                        'actual_hours': 3.0,
+                        'created_by_id': admin_user.id,
+                    },
+                ]
+                
+                for task_data in tasks_data:
+                    existing_task = session.query(ProductionTask).filter_by(
+                        task_number=task_data['task_number']
+                    ).first()
+                    
+                    if not existing_task or self.force_recreate:
+                        if existing_task and self.force_recreate:
+                            session.delete(existing_task)
+                        
+                        task = ProductionTask(**task_data)
+                        session.add(task)
+                        logger.info(f"Created production task: {task_data['title']}")
+                
+                session.commit()
+                
+                # Create sample sensor data (recent data for demonstration)
+                sensor_data_samples = []
+                base_time = datetime.utcnow()
+                
+                # Generate sample data for the last 2 hours
+                for i in range(24):  # 24 samples, 5 minutes apart
+                    timestamp = base_time - timedelta(minutes=i * 5)
+                    
+                    # Temperature sensor
+                    temp_value = 22.0 + random.uniform(-2, 2)
+                    temp_anomaly = temp_value < 18 or temp_value > 28
+                    sensor_data_samples.append({
+                        'sensor_name': 'Temperature_Sensor_1',
+                        'data_type': SensorDataType.TEMPERATURE,
+                        'value': round(temp_value, 1),
+                        'unit': '°C',
+                        'equipment_id': 'HVAC_System_A',
+                        'location': 'Production Floor A',
+                        'is_anomaly': temp_anomaly,
+                        'threshold_min': 18.0,
+                        'threshold_max': 28.0,
+                        'recorded_at': timestamp,
+                    })
+                    
+                    # Pressure sensor
+                    pressure_value = 100.0 + random.uniform(-15, 15)
+                    pressure_anomaly = pressure_value < 75 or pressure_value > 125
+                    sensor_data_samples.append({
+                        'sensor_name': 'Pressure_Sensor_1',
+                        'data_type': SensorDataType.PRESSURE,
+                        'value': round(pressure_value, 1),
+                        'unit': 'PSI',
+                        'equipment_id': 'Hydraulic_Press_1',
+                        'location': 'Manufacturing Cell 1',
+                        'is_anomaly': pressure_anomaly,
+                        'threshold_min': 75.0,
+                        'threshold_max': 125.0,
+                        'recorded_at': timestamp,
+                    })
+                
+                # Add sensor data to database
+                for sensor_data in sensor_data_samples:
+                    sensor_entry = SensorData(**sensor_data)
+                    session.add(sensor_entry)
+                
+                logger.info(f"Created {len(sensor_data_samples)} sensor data entries")
+                session.commit()
+                
+                # Create sample quality checks
+                quality_checks_data = [
+                    {
+                        'check_number': 'QC001',
+                        'check_type': 'Visual Inspection',
+                        'result': 'Pass',
+                        'defects_found': 0,
+                        'inspector_id': operator_user.id,
+                        'inspection_date': datetime.utcnow() - timedelta(hours=2),
+                    },
+                    {
+                        'check_number': 'QC002',
+                        'check_type': 'Dimensional Check',
+                        'result': 'Fail',
+                        'defects_found': 2,
+                        'defect_description': 'Two components were 0.5mm outside tolerance',
+                        'corrective_action': 'Recalibrate measurement equipment and rework components',
+                        'inspector_id': operator_user.id,
+                        'inspection_date': datetime.utcnow() - timedelta(hours=4),
+                    },
+                    {
+                        'check_number': 'QC003',
+                        'check_type': 'Material Testing',
+                        'result': 'Pass',
+                        'defects_found': 0,
+                        'inspector_id': manager_user.id,
+                        'inspection_date': datetime.utcnow() - timedelta(hours=6),
+                    },
+                ]
+                
+                for qc_data in quality_checks_data:
+                    existing_qc = session.query(QualityCheck).filter_by(
+                        check_number=qc_data['check_number']
+                    ).first()
+                    
+                    if not existing_qc or self.force_recreate:
+                        if existing_qc and self.force_recreate:
+                            session.delete(existing_qc)
+                        
+                        quality_check = QualityCheck(**qc_data)
+                        session.add(quality_check)
+                        logger.info(f"Created quality check: {qc_data['check_number']}")
+                
+                session.commit()
+                return True
+                
+        except Exception as e:
+            logger.error(f"Error creating ERP/MES data: {e}")
+            self.stats['errors'] += 1
+            return False
+
     def seed_all_data(self) -> bool:
         """
         Seed all demonstration data.
@@ -479,6 +704,10 @@ class DataSeeder:
         
         # Create inventory items
         if not self.create_inventory_items():
+            success = False
+        
+        # Create ERP and MES sample data
+        if not self.create_sample_erp_mes_data():
             success = False
         
         # Log final statistics
