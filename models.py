@@ -23,7 +23,7 @@ from sqlalchemy import (
     Text, ForeignKey, Enum, UniqueConstraint
 )
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, Session
+from sqlalchemy.orm import relationship, Session, joinedload, selectinload
 from sqlalchemy.engine import Engine
 import enum
 import bcrypt
@@ -653,7 +653,7 @@ def get_user_by_username(session: Session, username: str) -> Optional[User]:
     Returns:
         Optional[User]: User object if found, None otherwise
     """
-    return session.query(User).filter_by(username=username).first()
+    return session.query(User).options(joinedload(User.role)).filter_by(username=username).first()
 
 
 def authenticate_user(session: Session, username: str, password: str) -> Optional[User]:
@@ -690,6 +690,8 @@ def get_inventory_items(session: Session, category: Optional[str] = None,
     Returns:
         List[InventoryItem]: List of inventory items
     """
+    # Note: InventoryItem.category is an enum field, not a relationship,
+    # so no eager loading needed, but we ensure the enum value is accessible
     query = session.query(InventoryItem)
     
     if category:
@@ -762,6 +764,7 @@ def get_production_tasks(session: Session, status: Optional[str] = None,
     Returns:
         List[ProductionTask]: List of production tasks
     """
+    # Eager load any relationships if needed
     query = session.query(ProductionTask)
     
     if status:

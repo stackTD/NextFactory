@@ -175,17 +175,20 @@ class EnhancedInventoryModule(QWidget):
         for category in InventoryCategory:
             self.category_combo.addItem(category.value.replace('_', ' ').title())
         self.category_combo.currentTextChanged.connect(self.apply_filters)
+        self.category_combo.setToolTip("Filter inventory items by category")
         filters_layout.addRow("Category:", self.category_combo)
         
         # Search filter
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Search items...")
         self.search_input.textChanged.connect(self.apply_filters)
+        self.search_input.setToolTip("Search by item name or code")
         filters_layout.addRow("Search:", self.search_input)
         
         # Low stock filter
         self.low_stock_checkbox = QCheckBox("Show only low stock")
         self.low_stock_checkbox.toggled.connect(self.apply_filters)
+        self.low_stock_checkbox.setToolTip("Show only items below reorder point")
         filters_layout.addRow(self.low_stock_checkbox)
         
         layout.addWidget(filters_group)
@@ -302,28 +305,56 @@ class EnhancedInventoryModule(QWidget):
         """Apply current filter settings to inventory display."""
         if not hasattr(self, 'all_items'):
             return
+        
+        try:
+            filtered_items = self.all_items.copy()
             
-        filtered_items = self.all_items.copy()
-        
-        # Category filter
-        category_text = self.category_combo.currentText()
-        if category_text != "All Categories":
-            category_value = category_text.lower().replace(' ', '_')
-            filtered_items = [item for item in filtered_items 
-                            if item.category.value == category_value]
-        
-        # Search filter
-        search_text = self.search_input.text().lower()
-        if search_text:
-            filtered_items = [item for item in filtered_items
-                            if search_text in item.item_name.lower() or 
-                               search_text in item.item_code.lower()]
-        
-        # Low stock filter
-        if self.low_stock_checkbox.isChecked():
-            filtered_items = [item for item in filtered_items if item.is_low_stock()]
-        
-        self.display_items(filtered_items)
+            # Category filter
+            category_text = self.category_combo.currentText()
+            if category_text != "All Categories":
+                category_value = category_text.lower().replace(' ', '_')
+                try:
+                    filtered_items = [item for item in filtered_items 
+                                    if item.category.value == category_value]
+                except Exception as e:
+                    logger.error(f"Error filtering by category: {e}")
+                    # If we can't access category, reload data
+                    self.show_message("Reloading data due to session issue...")
+                    self.load_inventory_data()
+                    return
+            
+            # Search filter
+            search_text = self.search_input.text().lower()
+            if search_text:
+                try:
+                    filtered_items = [item for item in filtered_items
+                                    if search_text in item.item_name.lower() or 
+                                       search_text in item.item_code.lower()]
+                except Exception as e:
+                    logger.error(f"Error in search filter: {e}")
+                    self.show_message("Search failed due to session issue. Reloading data...")
+                    self.load_inventory_data()
+                    return
+            
+            # Low stock filter
+            if self.low_stock_checkbox.isChecked():
+                try:
+                    filtered_items = [item for item in filtered_items if item.is_low_stock()]
+                except Exception as e:
+                    logger.error(f"Error in low stock filter: {e}")
+                    self.show_message("Low stock filter failed. Reloading data...")
+                    self.load_inventory_data()
+                    return
+            
+            self.display_items(filtered_items)
+            
+        except Exception as e:
+            logger.error(f"Error applying filters: {e}")
+            self.show_message("Filtering failed. Please try again.")
+    
+    def show_message(self, message: str):
+        """Show a user-friendly message."""
+        QMessageBox.information(self, "Information", message)
         
     def add_inventory_item(self):
         """Add a new inventory item (placeholder for Phase 2)."""

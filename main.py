@@ -39,7 +39,7 @@ from PyQt6.QtGui import (
 )
 
 from database import get_db_session, test_database_connection
-from models import User, authenticate_user, get_inventory_items, InventoryItem
+from models import User, authenticate_user, get_inventory_items, InventoryItem, joinedload
 
 # Import new ERP and MES modules
 try:
@@ -324,15 +324,29 @@ class DashboardWidget(QWidget):
         layout.setSpacing(20)
         layout.setContentsMargins(20, 20, 20, 20)
         
-        # Welcome header
-        welcome_label = QLabel(f"Welcome, {self.user.get_full_name()}")
+        try:
+            # Welcome header - use safe user info access
+            with get_db_session() as session:
+                current_user = session.query(User).options(joinedload(User.role)).filter_by(id=self.user.id).first()
+                if current_user:
+                    welcome_text = f"Welcome, {current_user.get_full_name()}"
+                    role_text = f"Role: {current_user.role.display_name}"
+                else:
+                    welcome_text = f"Welcome, User"
+                    role_text = "Role: Unknown"
+        except Exception as e:
+            logger.error(f"Error loading user data for dashboard: {e}")
+            welcome_text = f"Welcome, User"
+            role_text = "Role: Unknown"
+        
+        welcome_label = QLabel(welcome_text)
         welcome_font = QFont()
         welcome_font.setPointSize(16)
         welcome_font.setBold(True)
         welcome_label.setFont(welcome_font)
         layout.addWidget(welcome_label)
         
-        role_label = QLabel(f"Role: {self.user.role.display_name}")
+        role_label = QLabel(role_text)
         role_font = QFont()
         role_font.setPointSize(12)
         role_label.setFont(role_font)
@@ -392,6 +406,7 @@ class DashboardWidget(QWidget):
         # Always available actions
         help_btn = QPushButton("System Help")
         help_btn.clicked.connect(self.show_help)
+        help_btn.setToolTip("View system help and user permissions")
         layout.addWidget(help_btn)
         
         layout.addStretch()
@@ -487,20 +502,29 @@ class DashboardWidget(QWidget):
     
     def show_help(self):
         """Display system help information."""
-        help_text = f"""NextFactory ERP+MES System Help
+        try:
+            # Ensure we have access to user data by refreshing it from the database
+            with get_db_session() as session:
+                # Get the current user with role information
+                current_user = session.query(User).options(joinedload(User.role)).filter_by(id=self.user.id).first()
+                if not current_user:
+                    QMessageBox.warning(self, "Error", "User session has expired. Please restart the application.")
+                    return
+                
+                help_text = f"""NextFactory ERP+MES System Help
 
-Current User: {self.user.get_full_name()}
-Role: {self.user.role.display_name}
+Current User: {current_user.get_full_name()}
+Role: {current_user.role.display_name}
 
 Role Permissions:
 """
-        permissions = self.user.role.to_dict()['permissions']
-        for perm, value in permissions.items():
-            status = "✓" if value else "✗"
-            perm_name = perm.replace('_', ' ').title()
-            help_text += f"• {status} {perm_name}\n"
-        
-        help_text += """
+                permissions = current_user.role.to_dict()['permissions']
+                for perm, value in permissions.items():
+                    status = "✓" if value else "✗"
+                    perm_name = perm.replace('_', ' ').title()
+                    help_text += f"• {status} {perm_name}\n"
+                
+                help_text += """
 Navigation:
 • Use the tabs to access different modules
 • Dashboard provides system overview
@@ -508,8 +532,12 @@ Navigation:
 
 For technical support during the exhibition,
 please contact the NextFactory team."""
-        
-        QMessageBox.information(self, "System Help", help_text)
+                
+                QMessageBox.information(self, "System Help", help_text)
+                
+        except Exception as e:
+            logger.error(f"Error displaying help: {e}")
+            QMessageBox.warning(self, "Error", "Unable to display help information. Please try again.")
 
 
 class InventoryModule(QWidget):
@@ -725,7 +753,13 @@ class NextFactoryMainWindow(QMainWindow):
         self.current_user = user
         self.setup_user_interface()
         self.update_window_title()
-        self.status_bar.showMessage(f"Logged in as: {user.get_full_name()} ({user.role.display_name})")
+        
+        try:
+            # Safely access user information
+            self.status_bar.showMessage(f"Logged in as: {user.get_full_name()} ({user.role.display_name})")
+        except Exception as e:
+            logger.error(f"Error updating status bar: {e}")
+            self.status_bar.showMessage(f"Logged in as: {user.username}")
         
     def setup_user_interface(self):
         """Set up user interface based on current user's role and permissions."""

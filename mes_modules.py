@@ -311,6 +311,7 @@ class ProductionSchedulingModule(QWidget):
         for status in TaskStatusEnum:
             self.status_filter.addItem(status.value.title())
         self.status_filter.currentTextChanged.connect(self.apply_task_filter)
+        self.status_filter.setToolTip("Filter tasks by completion status")
         filter_layout.addWidget(self.status_filter)
         
         filter_layout.addWidget(QLabel("Priority:"))
@@ -319,6 +320,7 @@ class ProductionSchedulingModule(QWidget):
         for priority in PriorityEnum:
             self.priority_filter.addItem(priority.value.title())
         self.priority_filter.currentTextChanged.connect(self.apply_task_filter)
+        self.priority_filter.setToolTip("Filter tasks by priority level")
         filter_layout.addWidget(self.priority_filter)
         
         filter_layout.addStretch()
@@ -419,22 +421,43 @@ class ProductionSchedulingModule(QWidget):
         """Apply current filter settings to task display."""
         if not hasattr(self, 'all_tasks'):
             return
+        
+        try:
+            filtered_tasks = self.all_tasks.copy()
             
-        filtered_tasks = self.all_tasks.copy()
-        
-        # Status filter
-        status_text = self.status_filter.currentText()
-        if status_text != "All Statuses":
-            status_value = status_text.lower()
-            filtered_tasks = [t for t in filtered_tasks if t.status.value == status_value]
-        
-        # Priority filter
-        priority_text = self.priority_filter.currentText()
-        if priority_text != "All Priorities":
-            priority_value = priority_text.lower()
-            filtered_tasks = [t for t in filtered_tasks if t.priority.value == priority_value]
-        
-        self.display_tasks(filtered_tasks)
+            # Status filter
+            status_text = self.status_filter.currentText()
+            if status_text != "All Statuses":
+                status_value = status_text.lower()
+                try:
+                    filtered_tasks = [t for t in filtered_tasks if t.status.value == status_value]
+                except Exception as e:
+                    logger.error(f"Error filtering by status: {e}")
+                    self.show_message("Reloading tasks due to session issue...")
+                    self.load_tasks()
+                    return
+            
+            # Priority filter
+            priority_text = self.priority_filter.currentText()
+            if priority_text != "All Priorities":
+                priority_value = priority_text.lower()
+                try:
+                    filtered_tasks = [t for t in filtered_tasks if t.priority.value == priority_value]
+                except Exception as e:
+                    logger.error(f"Error filtering by priority: {e}")
+                    self.show_message("Reloading tasks due to session issue...")
+                    self.load_tasks()
+                    return
+            
+            self.display_tasks(filtered_tasks)
+            
+        except Exception as e:
+            logger.error(f"Error applying task filters: {e}")
+            self.show_message("Filtering failed. Please try again.")
+    
+    def show_message(self, message: str):
+        """Show a user-friendly message."""
+        QMessageBox.information(self, "Information", message)
         
     def on_date_selected(self):
         """Handle calendar date selection."""
@@ -779,6 +802,7 @@ class QualityManagementModule(QWidget):
         self.result_filter = QComboBox()
         self.result_filter.addItems(["All Results", "Pass", "Fail", "Review"])
         self.result_filter.currentTextChanged.connect(self.apply_quality_filter)
+        self.result_filter.setToolTip("Filter quality checks by inspection result")
         controls_layout.addWidget(self.result_filter)
         
         controls_layout.addStretch()
@@ -971,14 +995,29 @@ class QualityManagementModule(QWidget):
         """Apply result filter to quality checks display."""
         if not hasattr(self, 'all_checks'):
             return
-            
-        filter_text = self.result_filter.currentText()
-        if filter_text == "All Results":
-            filtered_checks = self.all_checks
-        else:
-            filtered_checks = [c for c in self.all_checks if c.result.lower() == filter_text.lower()]
         
-        self.display_quality_checks(filtered_checks)
+        try:
+            filter_text = self.result_filter.currentText()
+            if filter_text == "All Results":
+                filtered_checks = self.all_checks
+            else:
+                try:
+                    filtered_checks = [c for c in self.all_checks if c.result.lower() == filter_text.lower()]
+                except Exception as e:
+                    logger.error(f"Error filtering quality checks by result: {e}")
+                    self.show_message("Reloading quality checks due to session issue...")
+                    self.load_quality_data()
+                    return
+            
+            self.display_quality_checks(filtered_checks)
+            
+        except Exception as e:
+            logger.error(f"Error applying quality filter: {e}")
+            self.show_message("Filtering failed. Please try again.")
+    
+    def show_message(self, message: str):
+        """Show a user-friendly message."""
+        QMessageBox.information(self, "Information", message)
         
     def on_result_changed(self, result: str):
         """Handle result selection change."""
