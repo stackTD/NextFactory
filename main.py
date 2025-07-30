@@ -40,6 +40,7 @@ from PyQt6.QtGui import (
 
 from database import get_db_session, test_database_connection
 from models import User, authenticate_user, get_inventory_items, InventoryItem, joinedload
+from ui_components import BaseModuleWidget
 
 # Import new ERP and MES modules
 try:
@@ -301,7 +302,7 @@ class LoginDialog(QDialog):
             self.show_message("Authentication failed. Please try again.")
 
 
-class DashboardWidget(QWidget):
+class DashboardWidget(BaseModuleWidget):
     """
     Central dashboard widget providing system overview and quick access.
     
@@ -318,45 +319,14 @@ class DashboardWidget(QWidget):
             user (User): Current logged-in user
             parent (Optional[QWidget]): Parent widget
         """
-        super().__init__(parent)
-        self.user = user
+        super().__init__("Dashboard", user, parent=parent)
         self.setup_ui()
         self.setup_refresh_timer()
         
     def setup_ui(self):
         """Set up the dashboard user interface."""
-        layout = QVBoxLayout(self)
+        layout = self.get_content_layout()
         layout.setSpacing(20)
-        layout.setContentsMargins(20, 20, 20, 20)
-        
-        try:
-            # Welcome header - use safe user info access
-            with get_db_session() as session:
-                current_user = session.query(User).options(joinedload(User.role)).filter_by(id=self.user.id).first()
-                if current_user:
-                    welcome_text = f"Welcome, {current_user.get_full_name()}"
-                    role_text = f"Role: {current_user.role.display_name}"
-                else:
-                    welcome_text = f"Welcome, User"
-                    role_text = "Role: Unknown"
-        except Exception as e:
-            logger.error(f"Error loading user data for dashboard: {e}")
-            welcome_text = f"Welcome, User"
-            role_text = "Role: Unknown"
-        
-        welcome_label = QLabel(welcome_text)
-        welcome_font = QFont()
-        welcome_font.setPointSize(16)
-        welcome_font.setBold(True)
-        welcome_label.setFont(welcome_font)
-        layout.addWidget(welcome_label)
-        
-        role_label = QLabel(role_text)
-        role_font = QFont()
-        role_font.setPointSize(12)
-        role_label.setFont(role_font)
-        role_label.setStyleSheet("color: #666666;")
-        layout.addWidget(role_label)
         
         # Main content splitter
         splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -545,7 +515,7 @@ please contact the NextFactory team."""
             QMessageBox.warning(self, "Error", "Unable to display help information. Please try again.")
 
 
-class InventoryModule(QWidget):
+class InventoryModule(BaseModuleWidget):
     """
     Basic inventory management module for demonstration.
     
@@ -561,23 +531,13 @@ class InventoryModule(QWidget):
             user (User): Current logged-in user
             parent (Optional[QWidget]): Parent widget
         """
-        super().__init__(parent)
-        self.user = user
+        super().__init__("Inventory Management", user, parent=parent)
         self.setup_ui()
         self.load_inventory_data()
         
     def setup_ui(self):
         """Set up the inventory module user interface."""
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 10, 10, 10)
-        
-        # Header
-        header_label = QLabel("Inventory Management")
-        header_font = QFont()
-        header_font.setPointSize(14)
-        header_font.setBold(True)
-        header_label.setFont(header_font)
-        layout.addWidget(header_label)
+        layout = self.get_content_layout()
         
         # Controls
         controls_layout = QHBoxLayout()

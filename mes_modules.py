@@ -49,6 +49,7 @@ from models import (
     User, ProductionTask, TaskStatusEnum, PriorityEnum, SensorData, SensorDataType,
     QualityCheck, get_production_tasks, get_recent_sensor_data, get_quality_checks
 )
+from ui_components import BaseModuleWidget
 
 logger = logging.getLogger(__name__)
 
@@ -190,7 +191,7 @@ class SensorSimulator(QThread):
         }
 
 
-class ProductionSchedulingModule(QWidget):
+class ProductionSchedulingModule(BaseModuleWidget):
     """
     Production scheduling and dispatching module with calendar view.
     
@@ -202,22 +203,13 @@ class ProductionSchedulingModule(QWidget):
     """
     
     def __init__(self, user: User, parent: Optional[QWidget] = None):
-        super().__init__(parent)
-        self.user = user
+        super().__init__("Production Scheduling & Dispatching", user, parent=parent)
         self.setup_ui()
         self.load_tasks()
         
     def setup_ui(self):
         """Set up the production scheduling UI."""
-        layout = QVBoxLayout(self)
-        
-        # Header
-        header_label = QLabel("Production Scheduling & Dispatching")
-        header_font = QFont()
-        header_font.setPointSize(16)
-        header_font.setBold(True)
-        header_label.setFont(header_font)
-        layout.addWidget(header_label)
+        layout = self.get_content_layout()
         
         # Create splitter for layout
         splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -497,7 +489,7 @@ class ProductionSchedulingModule(QWidget):
         )
 
 
-class RealTimeDataModule(QWidget):
+class RealTimeDataModule(BaseModuleWidget):
     """
     Real-time data collection module with sensor simulation and monitoring.
     
@@ -509,23 +501,14 @@ class RealTimeDataModule(QWidget):
     """
     
     def __init__(self, user: User, parent: Optional[QWidget] = None):
-        super().__init__(parent)
-        self.user = user
+        super().__init__("Real-Time Data Collection", user, parent=parent)
         self.sensor_simulator = SensorSimulator()
         self.setup_ui()
         self.start_monitoring()
         
     def setup_ui(self):
         """Set up the real-time data collection UI."""
-        layout = QVBoxLayout(self)
-        
-        # Header
-        header_label = QLabel("Real-Time Data Collection")
-        header_font = QFont()
-        header_font.setPointSize(16)
-        header_font.setBold(True)
-        header_label.setFont(header_font)
-        layout.addWidget(header_label)
+        layout = self.get_content_layout()
         
         # Create splitter for layout
         splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -738,7 +721,7 @@ class RealTimeDataModule(QWidget):
         super().closeEvent(event)
 
 
-class QualityManagementModule(QWidget):
+class QualityManagementModule(BaseModuleWidget):
     """
     Quality management module with inspection workflows and defect tracking.
     
@@ -750,22 +733,13 @@ class QualityManagementModule(QWidget):
     """
     
     def __init__(self, user: User, parent: Optional[QWidget] = None):
-        super().__init__(parent)
-        self.user = user
+        super().__init__("Quality Management", user, parent=parent)
         self.setup_ui()
         self.load_quality_data()
         
     def setup_ui(self):
         """Set up the quality management UI."""
-        layout = QVBoxLayout(self)
-        
-        # Header
-        header_label = QLabel("Quality Management")
-        header_font = QFont()
-        header_font.setPointSize(16)
-        header_font.setBold(True)
-        header_label.setFont(header_font)
-        layout.addWidget(header_label)
+        layout = self.get_content_layout()
         
         # Tab widget for different functions
         self.tab_widget = QTabWidget()
@@ -1058,7 +1032,7 @@ class QualityManagementModule(QWidget):
         self.result_combo.setCurrentText("Pass")
 
 
-class PerformanceAnalysisModule(QWidget):
+class PerformanceAnalysisModule(BaseModuleWidget):
     """
     Performance analysis module with OEE calculations and metrics.
     
@@ -1070,22 +1044,13 @@ class PerformanceAnalysisModule(QWidget):
     """
     
     def __init__(self, user: User, parent: Optional[QWidget] = None):
-        super().__init__(parent)
-        self.user = user
+        super().__init__("Performance Analysis", user, parent=parent)
         self.setup_ui()
         self.calculate_metrics()
         
     def setup_ui(self):
         """Set up the performance analysis UI."""
-        layout = QVBoxLayout(self)
-        
-        # Header
-        header_label = QLabel("Performance Analysis")
-        header_font = QFont()
-        header_font.setPointSize(16)
-        header_font.setBold(True)
-        header_label.setFont(header_font)
-        layout.addWidget(header_label)
+        layout = self.get_content_layout()
         
         # Create splitter for layout
         splitter = QSplitter(Qt.Orientation.Horizontal)

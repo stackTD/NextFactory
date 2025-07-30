@@ -44,6 +44,7 @@ from models import (
     Supplier, PurchaseOrder, PurchaseOrderItem, OrderStatusEnum, PriorityEnum,
     get_inventory_items, get_suppliers, get_purchase_orders
 )
+from ui_components import BaseModuleWidget
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +115,7 @@ class InventoryAlertWidget(QWidget):
             logger.error(f"Error updating inventory alerts: {e}")
 
 
-class EnhancedInventoryModule(QWidget):
+class EnhancedInventoryModule(BaseModuleWidget):
     """
     Enhanced inventory management module with advanced features.
     
@@ -127,22 +128,13 @@ class EnhancedInventoryModule(QWidget):
     """
     
     def __init__(self, user: User, parent: Optional[QWidget] = None):
-        super().__init__(parent)
-        self.user = user
+        super().__init__("Inventory Management", user, parent=parent)
         self.setup_ui()
         self.load_inventory_data()
         
     def setup_ui(self):
         """Set up the enhanced inventory management UI."""
-        layout = QVBoxLayout(self)
-        
-        # Header
-        header_label = QLabel("Enhanced Inventory Management")
-        header_font = QFont()
-        header_font.setPointSize(16)
-        header_font.setBold(True)
-        header_label.setFont(header_font)
-        layout.addWidget(header_label)
+        layout = self.get_content_layout()
         
         # Create splitter for main content
         splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -412,7 +404,7 @@ class EnhancedInventoryModule(QWidget):
             QMessageBox.warning(self, "Export Error", "Failed to export data")
 
 
-class SupplyChainModule(QWidget):
+class SupplyChainModule(BaseModuleWidget):
     """
     Supply chain management module with supplier management and procurement.
     
@@ -424,22 +416,13 @@ class SupplyChainModule(QWidget):
     """
     
     def __init__(self, user: User, parent: Optional[QWidget] = None):
-        super().__init__(parent)
-        self.user = user
+        super().__init__("Supply Chain", user, parent=parent)
         self.setup_ui()
         self.load_data()
         
     def setup_ui(self):
         """Set up the supply chain management UI."""
-        layout = QVBoxLayout(self)
-        
-        # Header
-        header_label = QLabel("Supply Chain Management")
-        header_font = QFont()
-        header_font.setPointSize(16)
-        header_font.setBold(True)
-        header_label.setFont(header_font)
-        layout.addWidget(header_label)
+        layout = self.get_content_layout()
         
         # Tab widget for different views
         self.tab_widget = QTabWidget()
@@ -794,7 +777,7 @@ class ChartWidget(QWidget):
             logger.error(f"Error plotting trend chart: {e}")
 
 
-class ReportingModule(QWidget):
+class ReportingModule(BaseModuleWidget):
     """
     Reporting and analytics module with data visualization and export capabilities.
     
@@ -806,22 +789,13 @@ class ReportingModule(QWidget):
     """
     
     def __init__(self, user: User, parent: Optional[QWidget] = None):
-        super().__init__(parent)
-        self.user = user
+        super().__init__("Reporting & Analytics", user, parent=parent)
         self.setup_ui()
         self.load_default_charts()
         
     def setup_ui(self):
         """Set up the reporting and analytics UI."""
-        layout = QVBoxLayout(self)
-        
-        # Header
-        header_label = QLabel("Reporting & Analytics")
-        header_font = QFont()
-        header_font.setPointSize(16)
-        header_font.setBold(True)
-        header_label.setFont(header_font)
-        layout.addWidget(header_label)
+        layout = self.get_content_layout()
         
         # Create splitter for layout
         splitter = QSplitter(Qt.Orientation.Horizontal)
