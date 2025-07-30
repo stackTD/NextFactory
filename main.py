@@ -160,6 +160,8 @@ class LoginDialog(QDialog):
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
         )
         self.button_box.button(QDialogButtonBox.StandardButton.Ok).setText("Login")
+        self.button_box.button(QDialogButtonBox.StandardButton.Ok).setDefault(True)
+        self.button_box.button(QDialogButtonBox.StandardButton.Cancel).setText("Exit")
         self.button_box.accepted.connect(self.authenticate_user)
         self.button_box.rejected.connect(self.reject)
         layout.addWidget(self.button_box)
@@ -167,6 +169,9 @@ class LoginDialog(QDialog):
         # Connect Enter key to login
         self.username_edit.returnPressed.connect(self.authenticate_user)
         self.password_edit.returnPressed.connect(self.authenticate_user)
+        
+        # Set initial focus to username field
+        self.username_edit.setFocus()
         
         # Set focus to username field
         self.username_edit.setFocus()
@@ -676,6 +681,9 @@ class NextFactoryMainWindow(QMainWindow):
         
         # Create tab widget
         self.tab_widget = QTabWidget()
+        self.tab_widget.setTabsClosable(False)  # Don't allow closing tabs
+        self.tab_widget.setMovable(False)       # Don't allow moving tabs
+        self.tab_widget.setUsesScrollButtons(True)  # Use scroll buttons if many tabs
         self.main_layout.addWidget(self.tab_widget)
         
         # Apply professional styling
@@ -693,13 +701,65 @@ class NextFactoryMainWindow(QMainWindow):
                 margin-right: 2px;
                 border-top-left-radius: 4px;
                 border-top-right-radius: 4px;
+                min-width: 100px;
             }
             QTabBar::tab:selected {
                 background-color: white;
                 border-bottom: 2px solid #007acc;
+                font-weight: bold;
             }
             QTabBar::tab:hover {
                 background-color: #d0d0d0;
+            }
+            QPushButton {
+                background-color: #007acc;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 4px;
+                font-weight: bold;
+                min-width: 100px;
+            }
+            QPushButton:hover {
+                background-color: #005fa3;
+            }
+            QPushButton:pressed {
+                background-color: #004080;
+            }
+            QPushButton:disabled {
+                background-color: #cccccc;
+                color: #666666;
+            }
+            QComboBox {
+                padding: 6px;
+                border: 1px solid #cccccc;
+                border-radius: 4px;
+                background-color: white;
+                min-width: 120px;
+            }
+            QComboBox:focus {
+                border: 2px solid #007acc;
+            }
+            QLineEdit {
+                padding: 6px;
+                border: 1px solid #cccccc;
+                border-radius: 4px;
+                background-color: white;
+            }
+            QLineEdit:focus {
+                border: 2px solid #007acc;
+            }
+            QGroupBox {
+                font-weight: bold;
+                border: 2px solid #cccccc;
+                border-radius: 5px;
+                margin-top: 10px;
+                padding-top: 10px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 10px 0 10px;
             }
         """)
         
@@ -711,19 +771,33 @@ class NextFactoryMainWindow(QMainWindow):
         file_menu = menubar.addMenu("File")
         
         logout_action = QAction("Logout", self)
+        logout_action.setShortcut("Ctrl+Q")
+        logout_action.setStatusTip("Logout from the current session")
         logout_action.triggered.connect(self.logout)
         file_menu.addAction(logout_action)
         
         file_menu.addSeparator()
         
         exit_action = QAction("Exit", self)
+        exit_action.setShortcut("Alt+F4")
+        exit_action.setStatusTip("Exit the application")
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
         
         # Help menu
         help_menu = menubar.addMenu("Help")
         
+        help_action = QAction("System Help", self)
+        help_action.setShortcut("F1")
+        help_action.setStatusTip("Show system help and user information")
+        help_action.triggered.connect(self.show_help)
+        help_menu.addAction(help_action)
+        
+        help_menu.addSeparator()
+        
         about_action = QAction("About NextFactory", self)
+        about_action.setShortcut("Ctrl+I")
+        about_action.setStatusTip("About NextFactory ERP+MES system")
         about_action.triggered.connect(self.show_about)
         help_menu.addAction(about_action)
         
@@ -872,6 +946,30 @@ class NextFactoryMainWindow(QMainWindow):
         self.setWindowTitle("NextFactory ERP+MES Exhibition Demo")
         self.status_bar.showMessage("Logged out")
         self.show_login_dialog()
+    
+    def show_help(self):
+        """Display system help from main window."""
+        if self.current_user:
+            # Find the dashboard tab and call its help method
+            for i in range(self.tab_widget.count()):
+                widget = self.tab_widget.widget(i)
+                if hasattr(widget, 'show_help'):
+                    widget.show_help()
+                    return
+        
+        # Fallback help if no dashboard found
+        QMessageBox.information(
+            self,
+            "System Help",
+            "NextFactory ERP+MES System Help\n\n"
+            "Use F1 to access context-sensitive help\n"
+            "Navigate using tabs or keyboard shortcuts\n\n"
+            "Keyboard Shortcuts:\n"
+            "• F1: Help\n"
+            "• Ctrl+Q: Logout\n"
+            "• Alt+F4: Exit\n"
+            "• Ctrl+I: About"
+        )
         
     def show_about(self):
         """Display about dialog."""
