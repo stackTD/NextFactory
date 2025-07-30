@@ -1,130 +1,32 @@
-The goal is to create a modular, interactive prototype where ERP and MES components seamlessly integrate named nextFactory [for exhibition]
-I want to demo NextFactory as a integrated ERP and MES software
+# NextFactory ERP+MES Exhibition Demo - Python Dependencies
+# Phase 1: Foundation Setup Dependencies
 
-Tech stack:
+# Core PyQt6 GUI Framework
+PyQt6==6.6.1
+PyQt6-Qt6==6.6.1
 
-python pyqt6 for GUI
-python for ore backend and fundamentals
-postgres for database [installed on my laptop, generate table details, sql commands and how to setup for Nextfactory details]
+# Database ORM and PostgreSQL adapter
+SQLAlchemy==2.0.25
+psycopg2-binary==2.9.9
 
-Phase 1: Foundation Setup
-Start here to establish the app's core structure, ensuring roles, database, and basic UI are ready yo prevents rework later.
-Steps:
-- Set up the PostgreSQL database: Install Postgres[complete on machine], create db schema as required
-- Initialize PyQt6 app: Create a main.py with QMainWindow, including a login dialog (QDialog) for roles (Admin, Manager, Operator, Guest, Analyst). Use SQLAlchemy to query roles and enable/disable UI elements based on permissions.
-- Add global utilities: Implement threading for real-time simulations (e.g., QTimer for periodic DB polls) and a central dashboard tab for cross-module views.
-- Seed mock data: Write a script to populate the DB with sample entries (e.g., fake inventory items, users)(should work only first time or should be seperate).
-- Testing: verify login and basic navigation. Ensure offline portability for the exhibition.
-- Rationale: This phase builds the skeleton, allowing modules to plug in easily.
+# Data analysis and visualization for reporting modules
+pandas==2.1.4
+matplotlib==3.8.2
+plotly==5.18.0
 
+# Date and time utilities
+python-dateutil==2.8.2
 
-Phase 2: Implement Recommended Modules 
-Focus on these first to get a functional MVP. Develop ERP modules before MES for logical flow (e.g., ERP inputs feed MES). Group by category for efficiency.
+# Configuration management
+python-dotenv==1.0.0
 
-1. ERP: Inventory Management
+# Utility libraries
+bcrypt==4.1.2
+typing-extensions==4.9.0
 
-    Function: Tracks stock levels, updates quantities, and logs material usage, providing views for searching and editing items.
-    Integration with Other Modules: Pulls data from Supply Chain Management for incoming materials; pushes updates to MES Real-Time Data Collection (e.g., via DB triggers) for production consumption; feeds Reporting and Analytics for stock trend charts.
-    Options: Low-stock alert thresholds (configurable via UI slider, e.g., 10-50%); filter by category (dropdown for raw materials vs. finished goods); auto-sync toggle with MES.
-    Development Notes: Use QTableView for displaying DB queries (SQLAlchemy model: InventoryItem with fields like item_name, quantity). Add buttons for updates; use signals to notify other modules on changes.
+# Development and testing (optional for exhibition)
+pytest==7.4.4
+pytest-qt==4.3.1
 
-2. ERP: Supply Chain Management (Simplified)
-
-    Function: Manages procurement orders, tracks suppliers, and simulates deliveries to ensure materials are available for production.
-    Integration with Other Modules: Triggers Inventory Management updates on delivery; sends orders to MES Production Scheduling for task creation; contributes data to Reporting for supply efficiency metrics.
-    Options: Supplier priority ranking (editable list); simulation delay for deliveries (timer setting, e.g., 5-30 seconds for demo effect); auto-order based on inventory thresholds.
-    Development Notes: Build a QFormLayout for order creation; use SQLAlchemy for a ProcurementOrder model linked to Inventory. Integrate with PyQt's QTimer for mock delays.
-
-3. ERP: Reporting and Analytics
-
-    Function: Generates visualizations and reports on KPIs like inventory turnover or production efficiency, pulling aggregated data.
-    Integration with Other Modules: Aggregates from all (e.g., combines MES Performance Analysis with ERP Inventory for holistic charts); exports data for Guest users in demos.
-    Options: Chart type selector (bar/line/pie via dropdown); time filters (e.g., last 24 hours); export formats (PDF/CSV button).
-    Development Notes: Use Matplotlib embedded in QGraphicsView for charts; query DB with Pandas for analysis. Make it a central tab accessible from other modules.
-
-
-4. MES: Production Scheduling and Dispatching
-
-    Function: Creates and assigns production tasks, prioritizing based on resources and deadlines, with status tracking.
-    Integration with Other Modules: Receives inputs from ERP Supply Chain (e.g., new orders); updates Real-Time Data Collection for live monitoring; feeds Quality Management for checks during execution.
-    Options: Priority levels (high/medium/low dropdown); calendar view toggle (daily/weekly); conflict alerts (pop-up notifications).
-    Development Notes: Use QCalendarWidget for scheduling; SQLAlchemy model for Tasks with foreign keys to orders. Dispatch via buttons that signal updates to other views.
-
-5. MES: Real-Time Data Collection
-
-    Function: Simulates gathering data from "sensors" or manual inputs, displaying live feeds for production status.
-    Integration with Other Modules: Updates Inventory Management on material use; triggers Quality Management alerts; provides raw data to Performance Analysis.
-    Options: Refresh interval (slider, e.g., 1-10 seconds); data source toggle (manual vs. simulated); anomaly thresholds for notifications.
-    Development Notes: Employ QTimer for polling DB inserts; display in a scrolling QListWidget. Use threading to avoid UI freezes.
-
-6. MES: Quality Management (Simplified)
-
-    Function: Logs checks during production, detects defects, and ensures compliance with basic metrics.
-    Integration with Other Modules: Pulls tasks from Production Scheduling; updates Real-Time Data Collection with status; contributes to Reporting for quality trends.
-    Options: Defect categories (customizable list); pass/fail thresholds (numeric input); audit log export.
-    Development Notes: Create a QFormLayout for check entries; model with SQLAlchemy for QualityLog linked to tasks. Use signals for real-time alerts.
-
-7. MES: Performance Analysis
-
-    Function: Calculates metrics like OEE or throughput from production data, providing insights for optimization.
-    Integration with Other Modules: Analyzes data from Real-Time Collection and Quality Management; syncs with ERP Reporting for combined views.
-    Options: Metric selectors (multi-select list); benchmark comparisons (input fields); visual themes (color schemes for charts).
-    Development Notes: Use Pandas for calculations on DB pulls; integrate Plotly charts in PyQt. Make it triggerable post-simulation.
-    Phase Testing: Simulate end-to-end flows (e.g., ERP order to MES completion). Verify role-based access (e.g., Operators can't edit schedules).
-
-Phase 3: Implement Optional Modules 
-
-
-8. ERP: Sales and Customer Relationship Management (CRM)
-
-    Function: Manages customer orders and relationships, tracking interactions and order history.
-    Integration with Other Modules: Feeds orders to Supply Chain and Inventory; updates Reporting with sales KPIs.
-    Options: Customer segmentation (tags); status notifications (email simulation toggle); sync with scheduling.
-    Development Notes: Use QTabWidget for customer views; SQLAlchemy model for Customers linked to orders.
-
-9. ERP: Asset Management
-
-    Function: Tracks assets like machines, including utilization and depreciation.
-    Integration with Other Modules: Links to MES Maintenance for schedules; updates Inventory for asset-related stock.
-    Options: Asset categories (dropdown); maintenance reminders (timer-based); status color-coding.
-    Development Notes: QTableView for lists; model with foreign keys to maintenance logs.
-
-
-10. MES: Resource Allocation and Status
-
-    Function: Assigns and monitors resources like machines or materials dynamically.
-    Integration with Other Modules: Supports Production Scheduling; updates Real-Time Data Collection.
-    Options: Resource types (custom list); auto-allocation toggle; status indicators (icons).
-    Development Notes: Use QComboBox for allocations; thread for status polls.
-
-11. MES: Product Tracking and Traceability
-
-    Function: Logs product genealogy for audits and recalls.
-    Integration with Other Modules: Builds on Quality Management; feeds Reporting for traceability reports.
-    Options: Trace depth (levels); search filters; export buttons.
-    Development Notes: Tree view with QTreeWidget; model for TraceLog.
-
-12. MES: Maintenance Management
-
-    Function: Schedules and tracks equipment maintenance to reduce downtime.
-    Integration with Other Modules: Links to Asset Management and Performance Analysis.
-    Options: Maintenance types (dropdown); priority escalations; calendar integrations.
-    Development Notes: QCalendarWidget; signals for alerts.
-
-13. MES: Labor Management
-
-    Function: Assigns and tracks worker schedules and performance.
-    Integration with Other Modules: Supports Resource Allocation; updates Reporting.
-    Options: Skill-based assignments; shift templates; metrics tracking.
-    Development Notes: Gantt-like view with custom widgets; model for Workers.
-
-    Phase Testing: Add integration tests (e.g., optional modules enhancing recommended flows). Package with PyInstaller for exhibition readiness.
-
-Phase 4: Polish, Testing, and Deployment (2-3 Days)
-
-    Refine UI for engagement (e.g., add demo buttons like "Run Simulation").
-    Full system testing: Role-based scenarios, error handling, performance on target hardware.
-    Deployment: Bundle app, include DB backup script. Prepare exhibition scripts (e.g., 5-min demo walkthrough)
-
-
-Generate the roles login credential and their access details.
+# Package building for exhibition deployment
+pyinstaller==6.3.0
