@@ -19,7 +19,7 @@ import sys
 from datetime import datetime
 
 # Set environment variables for database connection
-os.environ['DB_USER'] = 'runner'
+os.environ['DB_USER'] = 'nextfactory'
 os.environ['DB_PASSWORD'] = 'nextfactory123'
 
 def test_database_connection():
