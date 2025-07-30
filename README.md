@@ -1,13 +1,40 @@
 # NextFactory ERP+MES Exhibition Demo
 
-A comprehensive, modular ERP and MES integrated software solution designed for modern manufacturing environments. This exhibition demo showcases the core capabilities of NextFactory with role-based access control, professional UI, and foundational modules ready for expansion.
+A comprehensive, modular ERP and MES integrated software solution designed for modern manufacturing environments. This exhibition demo showcases the complete capabilities of NextFactory with role-based access control, professional UI, and **all Phase 3 optional modules** ready for demonstration.
 
-![NextFactory Demo](https://img.shields.io/badge/Status-Phase%202%20Complete-brightgreen)
+![NextFactory Demo](https://img.shields.io/badge/Status-Phase%203%20Complete-brightgreen)
 ![Python](https://img.shields.io/badge/Python-3.8%2B-blue)
 ![PyQt6](https://img.shields.io/badge/GUI-PyQt6-orange)
 ![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL-blue)
 
-## 🚀 Quick Start
+## 🚀 Quick Start (Autonomous Setup)
+
+**One-command setup for exhibition demos:**
+
+```bash
+git clone <repository-url>
+cd NextFactory
+python setup_postgres.py
+```
+
+This autonomous setup script will:
+- ✅ Install all Python dependencies
+- ✅ Configure PostgreSQL database automatically  
+- ✅ Create all database tables and relationships
+- ✅ Seed comprehensive demo data
+- ✅ Test the complete installation
+- ✅ Provide ready-to-run exhibition demo
+
+**Then start the application:**
+```bash
+python main.py
+```
+
+**That's it! 🎉 Complete NextFactory system ready in under 5 minutes.**
+
+## 📋 Manual Installation (Alternative)
+
+If you prefer manual setup:
 
 ### Prerequisites
 - **Python 3.8+** (recommended: 3.10+)
@@ -45,7 +72,7 @@ A comprehensive, modular ERP and MES integrated software solution designed for m
 
 ## 🎯 Exhibition Demo Workflow
 
-### 5-Minute Demo Script
+### 10-Minute Demo Script (Phase 3 Complete)
 
 #### **1. Login & Role Overview (1 minute)**
 - Start with Guest login (`guest` / `guest123`)
@@ -57,38 +84,34 @@ A comprehensive, modular ERP and MES integrated software solution designed for m
 - Navigate the professional dashboard
 - Show real-time metrics and system status
 - Demonstrate inventory summary with low-stock alerts
-- Explain modular tab structure
+- Explain modular tab structure with **13 total modules**
 
-#### **2. ERP Modules Demo (2 minutes)**
-- Access Enhanced Inventory Management tab
-- Show advanced filtering and search capabilities
-- Demonstrate low-stock alerts and color coding
-- Switch to Supply Chain Management
-- Show supplier management and auto-order analysis
-- Access Reporting & Analytics
-- Display interactive charts and KPI dashboard
+#### **3. ERP Modules Demo (3 minutes)**
+- **Enhanced Inventory Management**: Advanced filtering, alerts, export
+- **Supply Chain Management**: Supplier management, auto-order analysis
+- **Sales & CRM** ⭐: Customer management, order tracking, analytics
+- **Asset Management** ⭐: Equipment tracking, condition monitoring, maintenance links
+- **Reporting & Analytics**: Interactive charts, KPI dashboard, data export
 
-#### **3. MES Modules Demo (2 minutes)**
-- Navigate to Production Scheduling tab
-- Show calendar-based task management
-- Switch to Real-Time Data Collection
-- Demonstrate live sensor monitoring and anomaly detection
-- Access Quality Management
-- Show inspection forms and quality metrics
-- View Performance Analysis with OEE calculations
+#### **4. MES Modules Demo (4 minutes)**
+- **Production Scheduling**: Calendar-based task management
+- **Real-Time Data Collection**: Live sensor monitoring, anomaly detection
+- **Quality Management**: Inspection forms, quality metrics
+- **Performance Analysis**: OEE calculations, efficiency metrics
+- **Resource Allocation** ⭐: Resource optimization, auto-allocation
+- **Product Tracking & Traceability** ⭐: Genealogy tracking, audit trails
+- **Maintenance Management** ⭐: Work orders, preventive maintenance
+- **Labor Management** ⭐: Employee scheduling, performance tracking
 
-#### **4. Role-Based Access Control (1 minute)**
-- Switch to Operator role (`operator` / `operator123`)
-- Show limited access to MES modules only
-- Switch to Admin role (`admin` / `admin123`)
-- Demonstrate full system access across all modules
-- Explain security model and permission structure
+#### **5. Role-Based Access Control (1 minute)**
+- Switch to different roles showing access restrictions
+- Demonstrate security model across all 13 modules
+- Show UI adaptation based on permissions
 
-#### **5. Integration & Real-Time Features (0.5 minutes)**
+#### **6. Integration & Phase 3 Features (0.5 minutes)**
 - Highlight cross-module data integration
-- Show real-time updates and live monitoring
-- Demonstrate export capabilities
-- Explain modular architecture benefits
+- Show Phase 3 autonomous setup capabilities
+- Demonstrate comprehensive traceability and analytics
 
 ## 👥 User Roles & Credentials
 
@@ -162,7 +185,7 @@ quality_checks       # Quality management and inspections
 - **Status Indicators**: Visual feedback for system status and data conditions
 - **Help Integration**: Built-in help system and role-specific guidance
 
-## 📊 Current Features (Phase 2 Complete)
+## 📊 Current Features (Phase 3 Complete)
 
 ### ✅ Core System
 - **User Authentication**: Secure login with role-based access
@@ -170,6 +193,7 @@ quality_checks       # Quality management and inspections
 - **Role-Based Security**: Dynamic UI and permission enforcement
 - **Database Foundation**: Complete schema with all ERP/MES models
 - **Professional UI**: Exhibition-ready interface design
+- **Autonomous Setup**: One-command installation and configuration
 
 ### ✅ ERP Modules (Enterprise Resource Planning)
 
@@ -187,6 +211,20 @@ quality_checks       # Quality management and inspections
 - Auto-order analysis based on inventory thresholds
 - Delivery simulation and status tracking
 - Supplier performance analytics
+
+#### **Sales & CRM** ⭐ *Phase 3 New*
+- Customer relationship management with contact information
+- Sales order creation and tracking with status workflow
+- Order history and customer analytics
+- Customer performance metrics and revenue tracking
+- Credit limit management and relationship tracking
+
+#### **Asset Management** ⭐ *Phase 3 New*
+- Comprehensive asset registry (machines, tools, equipment)
+- Asset condition tracking and status monitoring
+- Purchase cost tracking and depreciation analysis
+- Location-based asset management
+- Maintenance history integration and alerts
 
 #### **Reporting & Analytics**
 - Interactive Matplotlib charts and visualizations
@@ -224,6 +262,34 @@ quality_checks       # Quality management and inspections
 - Real-time performance indicators
 - Throughput and efficiency analysis
 - Color-coded performance status
+
+#### **Resource Allocation** ⭐ *Phase 3 New*
+- Resource management (equipment, personnel, materials)
+- Auto-allocation algorithms for optimal resource usage
+- Resource utilization monitoring and capacity planning
+- Real-time availability tracking and status indicators
+- Cost analysis and efficiency optimization
+
+#### **Product Tracking & Traceability** ⭐ *Phase 3 New*
+- Complete product genealogy and batch tracking
+- Traceability records with operation history
+- Search capabilities and tree view navigation
+- Audit trail export and compliance reporting
+- Quality integration with production batches
+
+#### **Maintenance Management** ⭐ *Phase 3 New*
+- Preventive and corrective maintenance scheduling
+- Work order management with priority escalation
+- Maintenance cost tracking and analysis
+- Equipment downtime monitoring and alerts
+- MTTR/MTBF analytics and reporting
+
+#### **Labor Management** ⭐ *Phase 3 New*
+- Employee management and skill tracking
+- Shift templates and scheduling optimization
+- Performance monitoring and productivity analysis
+- Attendance tracking and labor cost analysis
+- Department-based organization and reporting
 
 ### 🔄 Real-Time Features
 - **Live Dashboard**: Updates every 30 seconds with current data
@@ -400,21 +466,41 @@ NextFactory Development Team - 2024
 
 ## 📈 Success Metrics
 
-This Phase 2 implementation successfully delivers:
+This Phase 3 implementation successfully delivers:
 
-✅ **Complete ERP Suite**: Advanced inventory, supply chain, and reporting modules  
-✅ **Full MES Integration**: Production scheduling, real-time monitoring, quality management  
-✅ **Professional UI**: Exhibition-ready interface with role-based access control  
+✅ **Complete ERP Suite**: Enhanced inventory, supply chain, sales & CRM, asset management, and reporting modules  
+✅ **Full MES Integration**: Production scheduling, real-time monitoring, quality management, resource allocation, product tracking, maintenance management, and labor management  
+✅ **Professional UI**: Exhibition-ready interface with role-based access control across **13 integrated modules**  
 ✅ **Real-Time Features**: Live data collection, monitoring, and automated alerts  
-✅ **Modular Architecture**: Extensible design supporting 13+ integrated modules  
-✅ **Database Integration**: Complete schema with comprehensive data models  
+✅ **Modular Architecture**: Extensible design supporting 13+ integrated modules with seamless data flow  
+✅ **Database Integration**: Complete schema with comprehensive data models for all Phase 3 features  
 ✅ **Security Model**: Comprehensive role-based access control and UI adaptation  
 ✅ **Export Capabilities**: Data export functionality for reports and analytics  
-✅ **Demo Data**: Complete sample dataset for immediate exhibition use  
+✅ **Demo Data**: Complete sample dataset for immediate exhibition use including all Phase 3 modules  
+✅ **Autonomous Setup**: One-command installation and configuration for exhibitions  
 ✅ **Documentation**: Comprehensive guides for setup, operation, and expansion  
 
-**Phase 2 Complete - Full ERP+MES solution ready for exhibition demonstration.**
+### 🌟 Phase 3 Optional Modules Delivered:
+1. **ERP: Sales & CRM** – Customer orders, relationships, order history
+2. **ERP: Asset Management** – Track machines, tools, asset status  
+3. **MES: Resource Allocation** – Assign/monitor resources, auto-allocation
+4. **MES: Product Tracking & Traceability** – Log genealogy, audit/export
+5. **MES: Maintenance Management** – Schedule/track maintenance, alerts
+6. **MES: Labor Management** – Worker schedules, shift templates, performance
+
+**Phase 3 Complete - Comprehensive ERP+MES solution with all optional modules ready for exhibition demonstration.**
+
+### 🚀 Exhibition Ready Features:
+- **13 Integrated Modules** across ERP and MES domains
+- **Autonomous Setup Script** for rapid deployment
+- **Comprehensive Demo Data** covering all business scenarios
+- **Professional UI** with role-based access control
+- **Real-Time Monitoring** and analytics across all modules
+- **Complete Traceability** from raw materials to finished products
+- **Advanced Resource Management** with optimization algorithms
+- **Maintenance Scheduling** with predictive analytics
+- **Labor Management** with performance tracking
 
 ---
 
-*NextFactory ERP+MES Exhibition Demo - Showcasing the future of integrated manufacturing software.*
+*NextFactory ERP+MES Exhibition Demo - Showcasing the complete future of integrated manufacturing software.*
