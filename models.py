@@ -314,6 +314,304 @@ class InventoryItem(Base):
         }
 
 
+class PriorityEnum(enum.Enum):
+    """Priority levels for various entities."""
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    URGENT = "urgent"
+
+
+class OrderStatusEnum(enum.Enum):
+    """Order status enumeration."""
+    PENDING = "pending"
+    CONFIRMED = "confirmed"
+    IN_PROGRESS = "in_progress"
+    SHIPPED = "shipped"
+    DELIVERED = "delivered"
+    CANCELLED = "cancelled"
+
+
+class TaskStatusEnum(enum.Enum):
+    """Task status enumeration for production."""
+    PLANNED = "planned"
+    READY = "ready"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    ON_HOLD = "on_hold"
+    CANCELLED = "cancelled"
+
+
+# ERP Module Models
+
+class Supplier(Base):
+    """
+    Supplier model for supply chain management.
+    
+    Attributes:
+        id (int): Primary key
+        supplier_code (str): Unique supplier identifier
+        name (str): Supplier company name
+        contact_person (str): Primary contact person
+        email (str): Contact email
+        phone (str): Contact phone
+        address (str): Supplier address
+        rating (float): Supplier performance rating (1-5)
+        status (StatusEnum): Supplier status
+        created_at (datetime): Creation timestamp
+        updated_at (datetime): Last update timestamp
+    """
+    __tablename__ = 'suppliers'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    supplier_code = Column(String(50), unique=True, nullable=False)
+    name = Column(String(200), nullable=False)
+    contact_person = Column(String(100))
+    email = Column(String(255))
+    phone = Column(String(50))
+    address = Column(Text)
+    rating = Column(Float, default=3.0)  # 1-5 scale
+    status = Column(Enum(StatusEnum), default=StatusEnum.ACTIVE, nullable=False)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    purchase_orders = relationship("PurchaseOrder", back_populates="supplier")
+    
+    def __repr__(self) -> str:
+        return f"<Supplier(code='{self.supplier_code}', name='{self.name}')>"
+
+
+class PurchaseOrder(Base):
+    """
+    Purchase order model for supply chain management.
+    
+    Attributes:
+        id (int): Primary key
+        order_number (str): Unique order number
+        supplier_id (int): Foreign key to Supplier
+        total_amount (float): Order total amount
+        status (OrderStatusEnum): Order status
+        priority (PriorityEnum): Order priority
+        requested_date (datetime): Requested delivery date
+        expected_date (datetime): Expected delivery date
+        actual_date (datetime): Actual delivery date
+        notes (str): Order notes
+        created_by_id (int): User who created the order
+        created_at (datetime): Creation timestamp
+        updated_at (datetime): Last update timestamp
+    """
+    __tablename__ = 'purchase_orders'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    order_number = Column(String(100), unique=True, nullable=False)
+    supplier_id = Column(Integer, ForeignKey('suppliers.id'), nullable=False)
+    total_amount = Column(Float, default=0.0)
+    status = Column(Enum(OrderStatusEnum), default=OrderStatusEnum.PENDING, nullable=False)
+    priority = Column(Enum(PriorityEnum), default=PriorityEnum.MEDIUM, nullable=False)
+    
+    # Dates
+    requested_date = Column(DateTime)
+    expected_date = Column(DateTime)
+    actual_date = Column(DateTime)
+    
+    notes = Column(Text)
+    created_by_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    supplier = relationship("Supplier", back_populates="purchase_orders")
+    created_by = relationship("User")
+    order_items = relationship("PurchaseOrderItem", back_populates="purchase_order")
+    
+    def __repr__(self) -> str:
+        return f"<PurchaseOrder(number='{self.order_number}', status='{self.status.value}')>"
+
+
+class PurchaseOrderItem(Base):
+    """
+    Purchase order line items.
+    
+    Attributes:
+        id (int): Primary key
+        purchase_order_id (int): Foreign key to PurchaseOrder
+        inventory_item_id (int): Foreign key to InventoryItem
+        quantity (float): Ordered quantity
+        unit_price (float): Price per unit
+        total_price (float): Line total (quantity * unit_price)
+    """
+    __tablename__ = 'purchase_order_items'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    purchase_order_id = Column(Integer, ForeignKey('purchase_orders.id'), nullable=False)
+    inventory_item_id = Column(Integer, ForeignKey('inventory_items.id'), nullable=False)
+    quantity = Column(Float, nullable=False)
+    unit_price = Column(Float, nullable=False)
+    total_price = Column(Float, nullable=False)
+    
+    # Relationships
+    purchase_order = relationship("PurchaseOrder", back_populates="order_items")
+    inventory_item = relationship("InventoryItem")
+    
+    def __repr__(self) -> str:
+        return f"<PurchaseOrderItem(order_id={self.purchase_order_id}, qty={self.quantity})>"
+
+
+# MES Module Models
+
+class ProductionTask(Base):
+    """
+    Production task model for scheduling and dispatching.
+    
+    Attributes:
+        id (int): Primary key
+        task_number (str): Unique task identifier
+        title (str): Task title/description
+        description (str): Detailed task description
+        priority (PriorityEnum): Task priority
+        status (TaskStatusEnum): Current task status
+        assigned_to_id (int): Assigned user ID
+        planned_start (datetime): Planned start time
+        planned_end (datetime): Planned end time
+        actual_start (datetime): Actual start time
+        actual_end (datetime): Actual end time
+        estimated_hours (float): Estimated completion time
+        actual_hours (float): Actual completion time
+        created_by_id (int): User who created the task
+        created_at (datetime): Creation timestamp
+        updated_at (datetime): Last update timestamp
+    """
+    __tablename__ = 'production_tasks'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    task_number = Column(String(100), unique=True, nullable=False)
+    title = Column(String(200), nullable=False)
+    description = Column(Text)
+    priority = Column(Enum(PriorityEnum), default=PriorityEnum.MEDIUM, nullable=False)
+    status = Column(Enum(TaskStatusEnum), default=TaskStatusEnum.PLANNED, nullable=False)
+    
+    # Assignment and scheduling
+    assigned_to_id = Column(Integer, ForeignKey('users.id'))
+    planned_start = Column(DateTime)
+    planned_end = Column(DateTime)
+    actual_start = Column(DateTime)
+    actual_end = Column(DateTime)
+    estimated_hours = Column(Float, default=0.0)
+    actual_hours = Column(Float, default=0.0)
+    
+    # Metadata
+    created_by_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    assigned_to = relationship("User", foreign_keys=[assigned_to_id])
+    created_by = relationship("User", foreign_keys=[created_by_id])
+    
+    def __repr__(self) -> str:
+        return f"<ProductionTask(number='{self.task_number}', status='{self.status.value}')>"
+
+
+class SensorDataType(enum.Enum):
+    """Types of sensor data collected."""
+    TEMPERATURE = "temperature"
+    PRESSURE = "pressure"
+    VIBRATION = "vibration"
+    SPEED = "speed"
+    POWER = "power"
+    COUNT = "count"
+    OTHER = "other"
+
+
+class SensorData(Base):
+    """
+    Real-time sensor data collection model.
+    
+    Attributes:
+        id (int): Primary key
+        sensor_name (str): Sensor identifier
+        data_type (SensorDataType): Type of data
+        value (float): Sensor reading value
+        unit (str): Unit of measurement
+        equipment_id (str): Equipment identifier
+        location (str): Sensor location
+        is_anomaly (bool): Whether reading is anomalous
+        threshold_min (float): Minimum threshold value
+        threshold_max (float): Maximum threshold value
+        recorded_at (datetime): When data was recorded
+        created_at (datetime): Database entry timestamp
+    """
+    __tablename__ = 'sensor_data'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    sensor_name = Column(String(100), nullable=False)
+    data_type = Column(Enum(SensorDataType), nullable=False)
+    value = Column(Float, nullable=False)
+    unit = Column(String(20), nullable=False)
+    equipment_id = Column(String(100))
+    location = Column(String(100))
+    
+    # Anomaly detection
+    is_anomaly = Column(Boolean, default=False)
+    threshold_min = Column(Float)
+    threshold_max = Column(Float)
+    
+    # Timestamps
+    recorded_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    def __repr__(self) -> str:
+        return f"<SensorData(sensor='{self.sensor_name}', value={self.value}, type='{self.data_type.value}')>"
+
+
+class QualityCheck(Base):
+    """
+    Quality management check model.
+    
+    Attributes:
+        id (int): Primary key
+        check_number (str): Unique check identifier
+        task_id (int): Associated production task
+        inspector_id (int): Inspector user ID
+        check_type (str): Type of quality check
+        result (str): Pass/Fail/Review
+        defects_found (int): Number of defects found
+        defect_description (str): Description of defects
+        corrective_action (str): Required corrective action
+        inspection_date (datetime): When inspection was performed
+        created_at (datetime): Record creation timestamp
+        updated_at (datetime): Last update timestamp
+    """
+    __tablename__ = 'quality_checks'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    check_number = Column(String(100), unique=True, nullable=False)
+    task_id = Column(Integer, ForeignKey('production_tasks.id'))
+    inspector_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    
+    # Check details
+    check_type = Column(String(100), nullable=False)
+    result = Column(String(50), nullable=False)  # Pass, Fail, Review
+    defects_found = Column(Integer, default=0)
+    defect_description = Column(Text)
+    corrective_action = Column(Text)
+    
+    # Timestamps
+    inspection_date = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    task = relationship("ProductionTask")
+    inspector = relationship("User")
+    
+    def __repr__(self) -> str:
+        return f"<QualityCheck(number='{self.check_number}', result='{self.result}')>"
+
+
 # Database utility functions
 
 def create_tables(engine: Engine) -> None:
@@ -407,3 +705,141 @@ def get_inventory_items(session: Session, category: Optional[str] = None,
         items = [item for item in items if item.is_low_stock()]
     
     return items
+
+
+# ERP Module Database Functions
+
+def get_suppliers(session: Session, active_only: bool = True) -> List[Supplier]:
+    """
+    Get suppliers with optional filtering.
+    
+    Args:
+        session (Session): Database session
+        active_only (bool): Filter to show only active suppliers
+        
+    Returns:
+        List[Supplier]: List of suppliers
+    """
+    query = session.query(Supplier)
+    if active_only:
+        query = query.filter_by(status=StatusEnum.ACTIVE)
+    return query.all()
+
+
+def get_purchase_orders(session: Session, status: Optional[str] = None) -> List[PurchaseOrder]:
+    """
+    Get purchase orders with optional status filtering.
+    
+    Args:
+        session (Session): Database session
+        status (Optional[str]): Filter by order status
+        
+    Returns:
+        List[PurchaseOrder]: List of purchase orders
+    """
+    query = session.query(PurchaseOrder)
+    if status:
+        try:
+            status_enum = OrderStatusEnum(status.lower())
+            query = query.filter_by(status=status_enum)
+        except ValueError:
+            pass
+    return query.order_by(PurchaseOrder.created_at.desc()).all()
+
+
+# MES Module Database Functions
+
+def get_production_tasks(session: Session, status: Optional[str] = None, 
+                        assigned_to: Optional[int] = None) -> List[ProductionTask]:
+    """
+    Get production tasks with optional filtering.
+    
+    Args:
+        session (Session): Database session
+        status (Optional[str]): Filter by task status
+        assigned_to (Optional[int]): Filter by assigned user ID
+        
+    Returns:
+        List[ProductionTask]: List of production tasks
+    """
+    query = session.query(ProductionTask)
+    
+    if status:
+        try:
+            status_enum = TaskStatusEnum(status.lower())
+            query = query.filter_by(status=status_enum)
+        except ValueError:
+            pass
+    
+    if assigned_to:
+        query = query.filter_by(assigned_to_id=assigned_to)
+    
+    return query.order_by(ProductionTask.planned_start.desc()).all()
+
+
+def get_recent_sensor_data(session: Session, hours: int = 24, 
+                          sensor_name: Optional[str] = None) -> List[SensorData]:
+    """
+    Get recent sensor data.
+    
+    Args:
+        session (Session): Database session
+        hours (int): Number of hours to look back
+        sensor_name (Optional[str]): Filter by sensor name
+        
+    Returns:
+        List[SensorData]: List of sensor data entries
+    """
+    from datetime import timedelta
+    cutoff_time = datetime.utcnow() - timedelta(hours=hours)
+    
+    query = session.query(SensorData).filter(SensorData.recorded_at >= cutoff_time)
+    
+    if sensor_name:
+        query = query.filter_by(sensor_name=sensor_name)
+    
+    return query.order_by(SensorData.recorded_at.desc()).all()
+
+
+def get_anomalous_sensor_data(session: Session, hours: int = 24) -> List[SensorData]:
+    """
+    Get anomalous sensor readings.
+    
+    Args:
+        session (Session): Database session
+        hours (int): Number of hours to look back
+        
+    Returns:
+        List[SensorData]: List of anomalous sensor data entries
+    """
+    from datetime import timedelta
+    cutoff_time = datetime.utcnow() - timedelta(hours=hours)
+    
+    return session.query(SensorData).filter(
+        SensorData.recorded_at >= cutoff_time,
+        SensorData.is_anomaly == True
+    ).order_by(SensorData.recorded_at.desc()).all()
+
+
+def get_quality_checks(session: Session, task_id: Optional[int] = None, 
+                      result: Optional[str] = None) -> List[QualityCheck]:
+    """
+    Get quality checks with optional filtering.
+    
+    Args:
+        session (Session): Database session
+        task_id (Optional[int]): Filter by production task ID
+        result (Optional[str]): Filter by check result
+        
+    Returns:
+        List[QualityCheck]: List of quality checks
+    """
+    query = session.query(QualityCheck)
+    
+    if task_id:
+        query = query.filter_by(task_id=task_id)
+    
+    if result:
+        query = query.filter_by(result=result)
+    
+    return query.order_by(QualityCheck.inspection_date.desc()).all()

@@ -41,6 +41,18 @@ from PyQt6.QtGui import (
 from database import get_db_session, test_database_connection
 from models import User, authenticate_user, get_inventory_items, InventoryItem
 
+# Import new ERP and MES modules
+try:
+    from erp_modules import EnhancedInventoryModule, SupplyChainModule, ReportingModule
+    from mes_modules import (
+        ProductionSchedulingModule, RealTimeDataModule, 
+        QualityManagementModule, PerformanceAnalysisModule
+    )
+    ERP_MES_MODULES_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"ERP/MES modules not available: {e}")
+    ERP_MES_MODULES_AVAILABLE = False
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -725,28 +737,64 @@ class NextFactoryMainWindow(QMainWindow):
         # Add tabs based on user permissions
         permissions = self.current_user.role.to_dict()['permissions']
         
-        # Inventory tab (if user can view reports or manage inventory)
+        # Enhanced Inventory Management
         if permissions.get('can_view_reports', False) or permissions.get('can_manage_inventory', False):
-            inventory_widget = InventoryModule(self.current_user)
-            self.tab_widget.addTab(inventory_widget, "Inventory")
+            if ERP_MES_MODULES_AVAILABLE:
+                enhanced_inventory = EnhancedInventoryModule(self.current_user)
+                self.tab_widget.addTab(enhanced_inventory, "Inventory Management")
+            else:
+                # Fallback to basic inventory
+                inventory_widget = InventoryModule(self.current_user)
+                self.tab_widget.addTab(inventory_widget, "Inventory")
         
-        # ERP modules (placeholder tabs)
-        if permissions.get('can_access_erp', False):
-            erp_placeholder = QLabel("ERP modules will be implemented in Phase 2")
+        # ERP modules
+        if permissions.get('can_access_erp', False) and ERP_MES_MODULES_AVAILABLE:
+            # Supply Chain Management
+            supply_chain = SupplyChainModule(self.current_user)
+            self.tab_widget.addTab(supply_chain, "Supply Chain")
+            
+            # Reporting & Analytics
+            if permissions.get('can_view_reports', False):
+                reporting = ReportingModule(self.current_user)
+                self.tab_widget.addTab(reporting, "Reporting & Analytics")
+        elif permissions.get('can_access_erp', False):
+            # Placeholder if modules not available
+            erp_placeholder = QLabel("ERP modules loading...")
             erp_placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.tab_widget.addTab(erp_placeholder, "ERP")
         
-        # MES modules (placeholder tabs)
-        if permissions.get('can_access_mes', False):
-            mes_placeholder = QLabel("MES modules will be implemented in Phase 2")
+        # MES modules
+        if permissions.get('can_access_mes', False) and ERP_MES_MODULES_AVAILABLE:
+            # Production Scheduling
+            production_scheduling = ProductionSchedulingModule(self.current_user)
+            self.tab_widget.addTab(production_scheduling, "Production Scheduling")
+            
+            # Real-Time Data Collection
+            real_time_data = RealTimeDataModule(self.current_user)
+            self.tab_widget.addTab(real_time_data, "Real-Time Data")
+            
+            # Quality Management
+            quality_management = QualityManagementModule(self.current_user)
+            self.tab_widget.addTab(quality_management, "Quality Management")
+            
+            # Performance Analysis
+            performance_analysis = PerformanceAnalysisModule(self.current_user)
+            self.tab_widget.addTab(performance_analysis, "Performance Analysis")
+        elif permissions.get('can_access_mes', False):
+            # Placeholder if modules not available
+            mes_placeholder = QLabel("MES modules loading...")
             mes_placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.tab_widget.addTab(mes_placeholder, "MES")
         
-        # Reports tab
-        if permissions.get('can_view_reports', False):
-            reports_placeholder = QLabel("Advanced reporting will be implemented in Phase 2")
-            reports_placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.tab_widget.addTab(reports_placeholder, "Reports")
+        # Basic Reports tab (for users who can't access full ERP but can view reports)
+        if permissions.get('can_view_reports', False) and not permissions.get('can_access_erp', False):
+            if ERP_MES_MODULES_AVAILABLE:
+                reporting = ReportingModule(self.current_user)
+                self.tab_widget.addTab(reporting, "Reports")
+            else:
+                reports_placeholder = QLabel("Advanced reporting will be available soon")
+                reports_placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.tab_widget.addTab(reports_placeholder, "Reports")
         
     def update_window_title(self):
         """Update window title with user information."""
