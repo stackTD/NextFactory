@@ -43,10 +43,15 @@ from models import User, authenticate_user, get_inventory_items, InventoryItem
 
 # Import new ERP and MES modules
 try:
-    from erp_modules import EnhancedInventoryModule, SupplyChainModule, ReportingModule
+    from erp_modules import (
+        EnhancedInventoryModule, SupplyChainModule, ReportingModule,
+        SalesCRMModule, AssetManagementModule
+    )
     from mes_modules import (
         ProductionSchedulingModule, RealTimeDataModule, 
-        QualityManagementModule, PerformanceAnalysisModule
+        QualityManagementModule, PerformanceAnalysisModule,
+        ResourceAllocationModule, ProductTrackingModule, 
+        MaintenanceManagementModule, LaborManagementModule
     )
     ERP_MES_MODULES_AVAILABLE = True
 except ImportError as e:
@@ -753,6 +758,14 @@ class NextFactoryMainWindow(QMainWindow):
             supply_chain = SupplyChainModule(self.current_user)
             self.tab_widget.addTab(supply_chain, "Supply Chain")
             
+            # Sales & CRM (Phase 3)
+            sales_crm = SalesCRMModule(self.current_user)
+            self.tab_widget.addTab(sales_crm, "Sales & CRM")
+            
+            # Asset Management (Phase 3)
+            asset_management = AssetManagementModule(self.current_user)
+            self.tab_widget.addTab(asset_management, "Asset Management")
+            
             # Reporting & Analytics
             if permissions.get('can_view_reports', False):
                 reporting = ReportingModule(self.current_user)
@@ -780,6 +793,22 @@ class NextFactoryMainWindow(QMainWindow):
             # Performance Analysis
             performance_analysis = PerformanceAnalysisModule(self.current_user)
             self.tab_widget.addTab(performance_analysis, "Performance Analysis")
+            
+            # Resource Allocation (Phase 3)
+            resource_allocation = ResourceAllocationModule(self.current_user)
+            self.tab_widget.addTab(resource_allocation, "Resource Allocation")
+            
+            # Product Tracking & Traceability (Phase 3)
+            product_tracking = ProductTrackingModule(self.current_user)
+            self.tab_widget.addTab(product_tracking, "Product Tracking")
+            
+            # Maintenance Management (Phase 3)
+            maintenance_mgmt = MaintenanceManagementModule(self.current_user)
+            self.tab_widget.addTab(maintenance_mgmt, "Maintenance")
+            
+            # Labor Management (Phase 3)
+            labor_mgmt = LaborManagementModule(self.current_user)
+            self.tab_widget.addTab(labor_mgmt, "Labor Management")
         elif permissions.get('can_access_mes', False):
             # Placeholder if modules not available
             mes_placeholder = QLabel("MES modules loading...")

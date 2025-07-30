@@ -843,3 +843,554 @@ def get_quality_checks(session: Session, task_id: Optional[int] = None,
         query = query.filter_by(result=result)
     
     return query.order_by(QualityCheck.inspection_date.desc()).all()
+
+
+# Additional Phase 3 Optional Module Models
+
+class Customer(Base):
+    """
+    Customer model for Sales & CRM module.
+    
+    Attributes:
+        id (int): Primary key
+        customer_code (str): Unique customer identifier
+        company_name (str): Customer company name
+        contact_person (str): Primary contact person
+        email (str): Contact email
+        phone (str): Contact phone
+        address (str): Customer address
+        credit_limit (float): Customer credit limit
+        status (StatusEnum): Customer status
+        created_at (datetime): Creation timestamp
+        updated_at (datetime): Last update timestamp
+    """
+    __tablename__ = 'customers'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    customer_code = Column(String(50), unique=True, nullable=False)
+    company_name = Column(String(200), nullable=False)
+    contact_person = Column(String(100))
+    email = Column(String(255))
+    phone = Column(String(50))
+    address = Column(Text)
+    credit_limit = Column(Float, default=0.0)
+    status = Column(Enum(StatusEnum), default=StatusEnum.ACTIVE, nullable=False)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    sales_orders = relationship("SalesOrder", back_populates="customer")
+    
+    def __repr__(self) -> str:
+        return f"<Customer(code='{self.customer_code}', name='{self.company_name}')>"
+
+
+class SalesOrder(Base):
+    """
+    Sales order model for customer order management.
+    
+    Attributes:
+        id (int): Primary key
+        order_number (str): Unique order number
+        customer_id (int): Foreign key to Customer
+        total_amount (float): Order total amount
+        status (OrderStatusEnum): Order status
+        priority (PriorityEnum): Order priority
+        order_date (datetime): Order creation date
+        requested_delivery (datetime): Requested delivery date
+        actual_delivery (datetime): Actual delivery date
+        notes (str): Order notes
+    """
+    __tablename__ = 'sales_orders'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    order_number = Column(String(50), unique=True, nullable=False)
+    customer_id = Column(Integer, ForeignKey('customers.id'), nullable=False)
+    total_amount = Column(Float, default=0.0)
+    status = Column(Enum(OrderStatusEnum), default=OrderStatusEnum.PENDING, nullable=False)
+    priority = Column(Enum(PriorityEnum), default=PriorityEnum.MEDIUM, nullable=False)
+    
+    # Dates
+    order_date = Column(DateTime, default=datetime.utcnow, nullable=False)
+    requested_delivery = Column(DateTime)
+    actual_delivery = Column(DateTime)
+    
+    notes = Column(Text)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    customer = relationship("Customer", back_populates="sales_orders")
+    
+    def __repr__(self) -> str:
+        return f"<SalesOrder(number='{self.order_number}', customer_id={self.customer_id})>"
+
+
+class AssetTypeEnum(enum.Enum):
+    """Asset type enumeration."""
+    MACHINE = "machine"
+    TOOL = "tool"
+    EQUIPMENT = "equipment"
+    VEHICLE = "vehicle"
+    COMPUTER = "computer"
+    FACILITY = "facility"
+
+
+class Asset(Base):
+    """
+    Asset model for Asset Management module.
+    
+    Attributes:
+        id (int): Primary key
+        asset_tag (str): Unique asset identifier
+        name (str): Asset name
+        description (str): Asset description
+        asset_type (AssetTypeEnum): Type of asset
+        manufacturer (str): Asset manufacturer
+        model (str): Asset model
+        serial_number (str): Asset serial number
+        purchase_date (datetime): Asset purchase date
+        purchase_cost (float): Asset purchase cost
+        location (str): Current asset location
+        status (StatusEnum): Asset status
+        condition (str): Asset condition
+    """
+    __tablename__ = 'assets'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    asset_tag = Column(String(50), unique=True, nullable=False)
+    name = Column(String(200), nullable=False)
+    description = Column(Text)
+    asset_type = Column(Enum(AssetTypeEnum), nullable=False)
+    manufacturer = Column(String(100))
+    model = Column(String(100))
+    serial_number = Column(String(100))
+    purchase_date = Column(DateTime)
+    purchase_cost = Column(Float, default=0.0)
+    location = Column(String(100))
+    status = Column(Enum(StatusEnum), default=StatusEnum.ACTIVE, nullable=False)
+    condition = Column(String(50), default="Good")
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    maintenance_records = relationship("MaintenanceRecord", back_populates="asset")
+    
+    def __repr__(self) -> str:
+        return f"<Asset(tag='{self.asset_tag}', name='{self.name}')>"
+
+
+class ResourceTypeEnum(enum.Enum):
+    """Resource type enumeration."""
+    EQUIPMENT = "equipment"
+    PERSONNEL = "personnel"
+    MATERIAL = "material"
+    TOOL = "tool"
+    WORKSPACE = "workspace"
+
+
+class Resource(Base):
+    """
+    Resource model for Resource Allocation module.
+    
+    Attributes:
+        id (int): Primary key
+        resource_code (str): Unique resource identifier
+        name (str): Resource name
+        resource_type (ResourceTypeEnum): Type of resource
+        capacity (float): Resource capacity
+        unit (str): Capacity unit
+        hourly_rate (float): Cost per hour
+        availability_status (str): Current availability
+        location (str): Resource location
+        status (StatusEnum): Resource status
+    """
+    __tablename__ = 'resources'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    resource_code = Column(String(50), unique=True, nullable=False)
+    name = Column(String(200), nullable=False)
+    resource_type = Column(Enum(ResourceTypeEnum), nullable=False)
+    capacity = Column(Float, default=1.0)
+    unit = Column(String(20), default="hours")
+    hourly_rate = Column(Float, default=0.0)
+    availability_status = Column(String(50), default="Available")
+    location = Column(String(100))
+    status = Column(Enum(StatusEnum), default=StatusEnum.ACTIVE, nullable=False)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    allocations = relationship("ResourceAllocation", back_populates="resource")
+    
+    def __repr__(self) -> str:
+        return f"<Resource(code='{self.resource_code}', name='{self.name}')>"
+
+
+class ResourceAllocation(Base):
+    """
+    Resource allocation model for tracking resource assignments.
+    
+    Attributes:
+        id (int): Primary key
+        resource_id (int): Foreign key to Resource
+        task_id (int): Foreign key to ProductionTask
+        allocated_quantity (float): Allocated quantity
+        start_time (datetime): Allocation start time
+        end_time (datetime): Allocation end time
+        status (str): Allocation status
+    """
+    __tablename__ = 'resource_allocations'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    resource_id = Column(Integer, ForeignKey('resources.id'), nullable=False)
+    task_id = Column(Integer, ForeignKey('production_tasks.id'), nullable=False)
+    allocated_quantity = Column(Float, default=1.0)
+    start_time = Column(DateTime, nullable=False)
+    end_time = Column(DateTime, nullable=False)
+    status = Column(String(50), default="Allocated")
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    resource = relationship("Resource", back_populates="allocations")
+    task = relationship("ProductionTask")
+    
+    def __repr__(self) -> str:
+        return f"<ResourceAllocation(resource_id={self.resource_id}, task_id={self.task_id})>"
+
+
+class ProductionBatch(Base):
+    """
+    Production batch model for Product Tracking & Traceability module.
+    
+    Attributes:
+        id (int): Primary key
+        batch_number (str): Unique batch identifier
+        product_name (str): Product name
+        quantity (float): Batch quantity
+        unit (str): Quantity unit
+        start_date (datetime): Production start date
+        end_date (datetime): Production end date
+        status (str): Batch status
+        quality_grade (str): Quality grade
+        notes (str): Batch notes
+    """
+    __tablename__ = 'production_batches'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    batch_number = Column(String(50), unique=True, nullable=False)
+    product_name = Column(String(200), nullable=False)
+    quantity = Column(Float, nullable=False)
+    unit = Column(String(20), nullable=False)
+    start_date = Column(DateTime)
+    end_date = Column(DateTime)
+    status = Column(String(50), default="In Progress")
+    quality_grade = Column(String(10), default="A")
+    notes = Column(Text)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    traceability_records = relationship("TraceabilityRecord", back_populates="batch")
+    
+    def __repr__(self) -> str:
+        return f"<ProductionBatch(number='{self.batch_number}', product='{self.product_name}')>"
+
+
+class TraceabilityRecord(Base):
+    """
+    Traceability record model for tracking product genealogy.
+    
+    Attributes:
+        id (int): Primary key
+        batch_id (int): Foreign key to ProductionBatch
+        operation (str): Operation performed
+        operator_id (int): Foreign key to User (operator)
+        start_time (datetime): Operation start time
+        end_time (datetime): Operation end time
+        parameters (str): Operation parameters (JSON string)
+        result (str): Operation result
+        notes (str): Additional notes
+    """
+    __tablename__ = 'traceability_records'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    batch_id = Column(Integer, ForeignKey('production_batches.id'), nullable=False)
+    operation = Column(String(100), nullable=False)
+    operator_id = Column(Integer, ForeignKey('users.id'))
+    start_time = Column(DateTime, nullable=False)
+    end_time = Column(DateTime)
+    parameters = Column(Text)  # JSON string
+    result = Column(String(50))
+    notes = Column(Text)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    batch = relationship("ProductionBatch", back_populates="traceability_records")
+    operator = relationship("User")
+    
+    def __repr__(self) -> str:
+        return f"<TraceabilityRecord(batch_id={self.batch_id}, operation='{self.operation}')>"
+
+
+class MaintenanceTypeEnum(enum.Enum):
+    """Maintenance type enumeration."""
+    PREVENTIVE = "preventive"
+    CORRECTIVE = "corrective"
+    PREDICTIVE = "predictive"
+    EMERGENCY = "emergency"
+
+
+class MaintenanceRecord(Base):
+    """
+    Maintenance record model for Maintenance Management module.
+    
+    Attributes:
+        id (int): Primary key
+        work_order (str): Unique work order number
+        asset_id (int): Foreign key to Asset
+        maintenance_type (MaintenanceTypeEnum): Type of maintenance
+        priority (PriorityEnum): Maintenance priority
+        status (str): Maintenance status
+        scheduled_date (datetime): Scheduled maintenance date
+        actual_start (datetime): Actual start time
+        actual_end (datetime): Actual end time
+        technician_id (int): Foreign key to User (technician)
+        description (str): Maintenance description
+        cost (float): Maintenance cost
+        notes (str): Maintenance notes
+    """
+    __tablename__ = 'maintenance_records'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    work_order = Column(String(50), unique=True, nullable=False)
+    asset_id = Column(Integer, ForeignKey('assets.id'), nullable=False)
+    maintenance_type = Column(Enum(MaintenanceTypeEnum), nullable=False)
+    priority = Column(Enum(PriorityEnum), default=PriorityEnum.MEDIUM, nullable=False)
+    status = Column(String(50), default="Scheduled")
+    scheduled_date = Column(DateTime, nullable=False)
+    actual_start = Column(DateTime)
+    actual_end = Column(DateTime)
+    technician_id = Column(Integer, ForeignKey('users.id'))
+    description = Column(Text, nullable=False)
+    cost = Column(Float, default=0.0)
+    notes = Column(Text)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    asset = relationship("Asset", back_populates="maintenance_records")
+    technician = relationship("User")
+    
+    def __repr__(self) -> str:
+        return f"<MaintenanceRecord(work_order='{self.work_order}', asset_id={self.asset_id})>"
+
+
+class Employee(Base):
+    """
+    Employee model for Labor Management module.
+    
+    Attributes:
+        id (int): Primary key
+        employee_id (str): Unique employee identifier
+        user_id (int): Foreign key to User (optional)
+        first_name (str): Employee first name
+        last_name (str): Employee last name
+        department (str): Employee department
+        position (str): Employee position
+        hire_date (datetime): Employee hire date
+        hourly_rate (float): Employee hourly rate
+        skill_level (str): Employee skill level
+        status (StatusEnum): Employee status
+    """
+    __tablename__ = 'employees'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    employee_id = Column(String(50), unique=True, nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id'))
+    first_name = Column(String(100), nullable=False)
+    last_name = Column(String(100), nullable=False)
+    department = Column(String(100))
+    position = Column(String(100))
+    hire_date = Column(DateTime)
+    hourly_rate = Column(Float, default=0.0)
+    skill_level = Column(String(50), default="Level 1")
+    status = Column(Enum(StatusEnum), default=StatusEnum.ACTIVE, nullable=False)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    user = relationship("User")
+    shift_assignments = relationship("ShiftAssignment", back_populates="employee")
+    
+    def __repr__(self) -> str:
+        return f"<Employee(id='{self.employee_id}', name='{self.first_name} {self.last_name}')>"
+
+
+class ShiftTemplate(Base):
+    """
+    Shift template model for defining work shifts.
+    
+    Attributes:
+        id (int): Primary key
+        name (str): Shift template name
+        start_time (str): Shift start time (HH:MM format)
+        end_time (str): Shift end time (HH:MM format)
+        duration_hours (float): Shift duration in hours
+        break_duration (float): Break duration in hours
+        description (str): Shift description
+        is_active (bool): Whether template is active
+    """
+    __tablename__ = 'shift_templates'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(100), nullable=False)
+    start_time = Column(String(5), nullable=False)  # HH:MM format
+    end_time = Column(String(5), nullable=False)    # HH:MM format
+    duration_hours = Column(Float, nullable=False)
+    break_duration = Column(Float, default=0.5)     # Default 30 minutes
+    description = Column(Text)
+    is_active = Column(Boolean, default=True, nullable=False)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    shift_assignments = relationship("ShiftAssignment", back_populates="shift_template")
+    
+    def __repr__(self) -> str:
+        return f"<ShiftTemplate(name='{self.name}', time='{self.start_time}-{self.end_time}')>"
+
+
+class ShiftAssignment(Base):
+    """
+    Shift assignment model for employee scheduling.
+    
+    Attributes:
+        id (int): Primary key
+        employee_id (int): Foreign key to Employee
+        shift_template_id (int): Foreign key to ShiftTemplate
+        date (datetime): Shift date
+        actual_start (datetime): Actual start time
+        actual_end (datetime): Actual end time
+        status (str): Shift status
+        notes (str): Shift notes
+    """
+    __tablename__ = 'shift_assignments'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    employee_id = Column(Integer, ForeignKey('employees.id'), nullable=False)
+    shift_template_id = Column(Integer, ForeignKey('shift_templates.id'), nullable=False)
+    date = Column(DateTime, nullable=False)
+    actual_start = Column(DateTime)
+    actual_end = Column(DateTime)
+    status = Column(String(50), default="Scheduled")
+    notes = Column(Text)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    employee = relationship("Employee", back_populates="shift_assignments")
+    shift_template = relationship("ShiftTemplate", back_populates="shift_assignments")
+    
+    def __repr__(self) -> str:
+        return f"<ShiftAssignment(employee_id={self.employee_id}, date='{self.date.date()}')>"
+
+
+# Additional utility functions for Phase 3 modules
+
+def get_customers(session: Session, active_only: bool = True) -> List[Customer]:
+    """Get customers with optional filtering."""
+    query = session.query(Customer)
+    if active_only:
+        query = query.filter_by(status=StatusEnum.ACTIVE)
+    return query.all()
+
+
+def get_sales_orders(session: Session, customer_id: Optional[int] = None) -> List[SalesOrder]:
+    """Get sales orders with optional customer filtering."""
+    query = session.query(SalesOrder)
+    if customer_id:
+        query = query.filter_by(customer_id=customer_id)
+    return query.order_by(SalesOrder.order_date.desc()).all()
+
+
+def get_assets(session: Session, asset_type: Optional[str] = None) -> List[Asset]:
+    """Get assets with optional type filtering."""
+    query = session.query(Asset).filter_by(status=StatusEnum.ACTIVE)
+    if asset_type:
+        try:
+            type_enum = AssetTypeEnum(asset_type.lower())
+            query = query.filter_by(asset_type=type_enum)
+        except ValueError:
+            pass
+    return query.all()
+
+
+def get_resources(session: Session, resource_type: Optional[str] = None) -> List[Resource]:
+    """Get resources with optional type filtering."""
+    query = session.query(Resource).filter_by(status=StatusEnum.ACTIVE)
+    if resource_type:
+        try:
+            type_enum = ResourceTypeEnum(resource_type.lower())
+            query = query.filter_by(resource_type=type_enum)
+        except ValueError:
+            pass
+    return query.all()
+
+
+def get_production_batches(session: Session, status: Optional[str] = None) -> List[ProductionBatch]:
+    """Get production batches with optional status filtering."""
+    query = session.query(ProductionBatch)
+    if status:
+        query = query.filter_by(status=status)
+    return query.order_by(ProductionBatch.created_at.desc()).all()
+
+
+def get_maintenance_records(session: Session, asset_id: Optional[int] = None) -> List[MaintenanceRecord]:
+    """Get maintenance records with optional asset filtering."""
+    query = session.query(MaintenanceRecord)
+    if asset_id:
+        query = query.filter_by(asset_id=asset_id)
+    return query.order_by(MaintenanceRecord.scheduled_date.desc()).all()
+
+
+def get_employees(session: Session, department: Optional[str] = None) -> List[Employee]:
+    """Get employees with optional department filtering."""
+    query = session.query(Employee).filter_by(status=StatusEnum.ACTIVE)
+    if department:
+        query = query.filter_by(department=department)
+    return query.all()
+
+
+def get_shift_assignments(session: Session, employee_id: Optional[int] = None, 
+                         date_from: Optional[datetime] = None) -> List[ShiftAssignment]:
+    """Get shift assignments with optional filtering."""
+    query = session.query(ShiftAssignment)
+    if employee_id:
+        query = query.filter_by(employee_id=employee_id)
+    if date_from:
+        query = query.filter(ShiftAssignment.date >= date_from)
+    return query.order_by(ShiftAssignment.date.desc()).all()

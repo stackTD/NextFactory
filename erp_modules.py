@@ -933,3 +933,501 @@ class ReportingModule(QWidget):
         except Exception as e:
             logger.error(f"Error exporting chart: {e}")
             QMessageBox.warning(self, "Export Error", "Failed to export chart")
+
+
+# Phase 3 Optional ERP Modules
+
+class SalesCRMModule(QWidget):
+    """
+    Sales & CRM module for customer relationship management.
+    
+    Features:
+    - Customer management with contact information
+    - Sales order creation and tracking
+    - Order history and relationship tracking
+    - Customer analytics and performance metrics
+    """
+    
+    def __init__(self, parent: Optional[QWidget] = None):
+        super().__init__(parent)
+        self.setup_ui()
+        self.load_data()
+        
+        # Set up timer for periodic updates
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.refresh_data)
+        self.timer.start(30000)  # Update every 30 seconds
+        
+    def setup_ui(self):
+        """Set up the Sales & CRM module UI."""
+        layout = QVBoxLayout(self)
+        
+        # Header
+        header = QLabel("Sales & CRM Management")
+        header.setFont(QFont("Arial", 16, QFont.Weight.Bold))
+        header.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(header)
+        
+        # Create tab widget for different views
+        self.tab_widget = QTabWidget()
+        layout.addWidget(self.tab_widget)
+        
+        # Customer Management Tab
+        self.setup_customer_tab()
+        
+        # Sales Orders Tab
+        self.setup_orders_tab()
+        
+        # Customer Analytics Tab
+        self.setup_analytics_tab()
+        
+    def setup_customer_tab(self):
+        """Set up customer management tab."""
+        customer_widget = QWidget()
+        layout = QVBoxLayout(customer_widget)
+        
+        # Customer controls
+        controls_layout = QHBoxLayout()
+        
+        add_customer_btn = QPushButton("Add Customer")
+        add_customer_btn.clicked.connect(self.add_customer)
+        controls_layout.addWidget(add_customer_btn)
+        
+        edit_customer_btn = QPushButton("Edit Customer")
+        edit_customer_btn.clicked.connect(self.edit_customer)
+        controls_layout.addWidget(edit_customer_btn)
+        
+        refresh_btn = QPushButton("Refresh")
+        refresh_btn.clicked.connect(self.refresh_data)
+        controls_layout.addWidget(refresh_btn)
+        
+        controls_layout.addStretch()
+        layout.addLayout(controls_layout)
+        
+        # Customer table
+        self.customer_table = QTableWidget()
+        self.customer_table.setColumnCount(7)
+        self.customer_table.setHorizontalHeaderLabels([
+            "Customer Code", "Company Name", "Contact Person", 
+            "Email", "Phone", "Credit Limit", "Status"
+        ])
+        
+        header = self.customer_table.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(6, QHeaderView.ResizeMode.ResizeToContents)
+        
+        layout.addWidget(self.customer_table)
+        
+        self.tab_widget.addTab(customer_widget, "Customers")
+        
+    def setup_orders_tab(self):
+        """Set up sales orders tab."""
+        orders_widget = QWidget()
+        layout = QVBoxLayout(orders_widget)
+        
+        # Order controls
+        controls_layout = QHBoxLayout()
+        
+        add_order_btn = QPushButton("New Order")
+        add_order_btn.clicked.connect(self.add_sales_order)
+        controls_layout.addWidget(add_order_btn)
+        
+        self.status_filter = QComboBox()
+        self.status_filter.addItems(["All Orders", "Pending", "Confirmed", "In Progress", "Shipped", "Delivered"])
+        self.status_filter.currentTextChanged.connect(self.filter_orders)
+        controls_layout.addWidget(QLabel("Filter:"))
+        controls_layout.addWidget(self.status_filter)
+        
+        controls_layout.addStretch()
+        layout.addLayout(controls_layout)
+        
+        # Orders table
+        self.orders_table = QTableWidget()
+        self.orders_table.setColumnCount(8)
+        self.orders_table.setHorizontalHeaderLabels([
+            "Order #", "Customer", "Order Date", "Total Amount", 
+            "Status", "Priority", "Requested Delivery", "Notes"
+        ])
+        
+        header = self.orders_table.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(6, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(7, QHeaderView.ResizeMode.Stretch)
+        
+        layout.addWidget(self.orders_table)
+        
+        self.tab_widget.addTab(orders_widget, "Sales Orders")
+        
+    def setup_analytics_tab(self):
+        """Set up customer analytics tab."""
+        analytics_widget = QWidget()
+        layout = QVBoxLayout(analytics_widget)
+        
+        # Analytics header
+        analytics_header = QLabel("Customer Analytics & Performance")
+        analytics_header.setFont(QFont("Arial", 14, QFont.Weight.Bold))
+        layout.addWidget(analytics_header)
+        
+        # KPI cards
+        kpi_layout = QHBoxLayout()
+        
+        # Total customers
+        self.total_customers_card = self.create_kpi_card("Total Customers", "0")
+        kpi_layout.addWidget(self.total_customers_card)
+        
+        # Active orders
+        self.active_orders_card = self.create_kpi_card("Active Orders", "0")
+        kpi_layout.addWidget(self.active_orders_card)
+        
+        # Monthly revenue
+        self.monthly_revenue_card = self.create_kpi_card("Monthly Revenue", "$0")
+        kpi_layout.addWidget(self.monthly_revenue_card)
+        
+        # Average order value
+        self.avg_order_card = self.create_kpi_card("Avg Order Value", "$0")
+        kpi_layout.addWidget(self.avg_order_card)
+        
+        layout.addLayout(kpi_layout)
+        
+        # Top customers table
+        top_customers_label = QLabel("Top Customers by Order Value")
+        top_customers_label.setFont(QFont("Arial", 12, QFont.Weight.Bold))
+        layout.addWidget(top_customers_label)
+        
+        self.top_customers_table = QTableWidget()
+        self.top_customers_table.setColumnCount(4)
+        self.top_customers_table.setHorizontalHeaderLabels([
+            "Customer", "Total Orders", "Total Value", "Last Order"
+        ])
+        self.top_customers_table.setMaximumHeight(200)
+        layout.addWidget(self.top_customers_table)
+        
+        self.tab_widget.addTab(analytics_widget, "Analytics")
+        
+    def create_kpi_card(self, title: str, value: str) -> QGroupBox:
+        """Create a KPI card widget."""
+        card = QGroupBox(title)
+        layout = QVBoxLayout(card)
+        
+        value_label = QLabel(value)
+        value_label.setFont(QFont("Arial", 18, QFont.Weight.Bold))
+        value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        value_label.setStyleSheet("color: #2E86AB; padding: 10px;")
+        
+        layout.addWidget(value_label)
+        card.value_label = value_label  # Store reference for updates
+        
+        return card
+        
+    def load_data(self):
+        """Load customer and order data."""
+        self.load_customers()
+        self.load_sales_orders()
+        self.update_analytics()
+        
+    def load_customers(self):
+        """Load customer data into table."""
+        try:
+            from models import get_customers
+            with get_db_session() as session:
+                customers = get_customers(session)
+                
+                self.customer_table.setRowCount(len(customers))
+                
+                for row, customer in enumerate(customers):
+                    self.customer_table.setItem(row, 0, QTableWidgetItem(customer.customer_code))
+                    self.customer_table.setItem(row, 1, QTableWidgetItem(customer.company_name))
+                    self.customer_table.setItem(row, 2, QTableWidgetItem(customer.contact_person or ""))
+                    self.customer_table.setItem(row, 3, QTableWidgetItem(customer.email or ""))
+                    self.customer_table.setItem(row, 4, QTableWidgetItem(customer.phone or ""))
+                    self.customer_table.setItem(row, 5, QTableWidgetItem(f"${customer.credit_limit:,.2f}"))
+                    self.customer_table.setItem(row, 6, QTableWidgetItem(customer.status.value))
+                    
+        except Exception as e:
+            logger.error(f"Error loading customers: {e}")
+            
+    def load_sales_orders(self):
+        """Load sales orders data into table."""
+        try:
+            from models import get_sales_orders
+            with get_db_session() as session:
+                orders = get_sales_orders(session)
+                
+                self.orders_table.setRowCount(len(orders))
+                
+                for row, order in enumerate(orders):
+                    self.orders_table.setItem(row, 0, QTableWidgetItem(order.order_number))
+                    self.orders_table.setItem(row, 1, QTableWidgetItem(order.customer.company_name))
+                    self.orders_table.setItem(row, 2, QTableWidgetItem(order.order_date.strftime("%Y-%m-%d")))
+                    self.orders_table.setItem(row, 3, QTableWidgetItem(f"${order.total_amount:,.2f}"))
+                    self.orders_table.setItem(row, 4, QTableWidgetItem(order.status.value))
+                    self.orders_table.setItem(row, 5, QTableWidgetItem(order.priority.value))
+                    
+                    req_delivery = order.requested_delivery.strftime("%Y-%m-%d") if order.requested_delivery else "TBD"
+                    self.orders_table.setItem(row, 6, QTableWidgetItem(req_delivery))
+                    self.orders_table.setItem(row, 7, QTableWidgetItem(order.notes or ""))
+                    
+        except Exception as e:
+            logger.error(f"Error loading sales orders: {e}")
+            
+    def update_analytics(self):
+        """Update analytics and KPIs."""
+        try:
+            from models import get_customers, get_sales_orders
+            with get_db_session() as session:
+                customers = get_customers(session)
+                orders = get_sales_orders(session)
+                
+                # Update KPI cards
+                self.total_customers_card.value_label.setText(str(len(customers)))
+                
+                active_orders = [o for o in orders if o.status.value in ['pending', 'confirmed', 'in_progress']]
+                self.active_orders_card.value_label.setText(str(len(active_orders)))
+                
+                # Calculate monthly revenue (demo: sum of all orders)
+                total_revenue = sum(order.total_amount for order in orders)
+                self.monthly_revenue_card.value_label.setText(f"${total_revenue:,.2f}")
+                
+                # Average order value
+                avg_order = total_revenue / len(orders) if orders else 0
+                self.avg_order_card.value_label.setText(f"${avg_order:,.2f}")
+                
+        except Exception as e:
+            logger.error(f"Error updating analytics: {e}")
+            
+    def filter_orders(self):
+        """Filter orders by status."""
+        filter_text = self.status_filter.currentText()
+        if filter_text == "All Orders":
+            self.load_sales_orders()
+            return
+            
+        # Filter table rows based on status
+        for row in range(self.orders_table.rowCount()):
+            status_item = self.orders_table.item(row, 4)
+            if status_item:
+                should_show = filter_text.lower() in status_item.text().lower()
+                self.orders_table.setRowHidden(row, not should_show)
+                
+    def add_customer(self):
+        """Add new customer dialog."""
+        QMessageBox.information(self, "Coming Soon", 
+                              "Customer creation dialog will be implemented in the next phase.")
+        
+    def edit_customer(self):
+        """Edit selected customer."""
+        current_row = self.customer_table.currentRow()
+        if current_row >= 0:
+            QMessageBox.information(self, "Coming Soon", 
+                                  "Customer editing dialog will be implemented in the next phase.")
+        else:
+            QMessageBox.warning(self, "No Selection", "Please select a customer to edit.")
+            
+    def add_sales_order(self):
+        """Add new sales order dialog."""
+        QMessageBox.information(self, "Coming Soon", 
+                              "Sales order creation dialog will be implemented in the next phase.")
+        
+    def refresh_data(self):
+        """Refresh all data."""
+        self.load_data()
+
+
+class AssetManagementModule(QWidget):
+    """
+    Asset Management module for tracking machines, tools, and equipment.
+    
+    Features:
+    - Asset registry with detailed information
+    - Asset condition and status tracking
+    - Maintenance history integration
+    - Asset performance metrics
+    """
+    
+    def __init__(self, parent: Optional[QWidget] = None):
+        super().__init__(parent)
+        self.setup_ui()
+        self.load_data()
+        
+        # Set up timer for periodic updates
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.refresh_data)
+        self.timer.start(60000)  # Update every minute
+        
+    def setup_ui(self):
+        """Set up the Asset Management module UI."""
+        layout = QVBoxLayout(self)
+        
+        # Header
+        header = QLabel("Asset Management")
+        header.setFont(QFont("Arial", 16, QFont.Weight.Bold))
+        header.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(header)
+        
+        # Controls
+        controls_layout = QHBoxLayout()
+        
+        add_asset_btn = QPushButton("Add Asset")
+        add_asset_btn.clicked.connect(self.add_asset)
+        controls_layout.addWidget(add_asset_btn)
+        
+        self.asset_type_filter = QComboBox()
+        self.asset_type_filter.addItems(["All Types", "Machine", "Tool", "Equipment", "Vehicle", "Computer", "Facility"])
+        self.asset_type_filter.currentTextChanged.connect(self.filter_assets)
+        controls_layout.addWidget(QLabel("Type:"))
+        controls_layout.addWidget(self.asset_type_filter)
+        
+        self.status_filter = QComboBox()
+        self.status_filter.addItems(["All Status", "Active", "Inactive", "Maintenance", "Retired"])
+        self.status_filter.currentTextChanged.connect(self.filter_assets)
+        controls_layout.addWidget(QLabel("Status:"))
+        controls_layout.addWidget(self.status_filter)
+        
+        refresh_btn = QPushButton("Refresh")
+        refresh_btn.clicked.connect(self.refresh_data)
+        controls_layout.addWidget(refresh_btn)
+        
+        controls_layout.addStretch()
+        layout.addLayout(controls_layout)
+        
+        # Asset summary cards
+        summary_layout = QHBoxLayout()
+        
+        self.total_assets_card = self.create_summary_card("Total Assets", "0")
+        summary_layout.addWidget(self.total_assets_card)
+        
+        self.active_assets_card = self.create_summary_card("Active Assets", "0")
+        summary_layout.addWidget(self.active_assets_card)
+        
+        self.maintenance_due_card = self.create_summary_card("Maintenance Due", "0")
+        summary_layout.addWidget(self.maintenance_due_card)
+        
+        self.total_value_card = self.create_summary_card("Total Value", "$0")
+        summary_layout.addWidget(self.total_value_card)
+        
+        layout.addLayout(summary_layout)
+        
+        # Asset table
+        self.asset_table = QTableWidget()
+        self.asset_table.setColumnCount(9)
+        self.asset_table.setHorizontalHeaderLabels([
+            "Asset Tag", "Name", "Type", "Manufacturer", "Model", 
+            "Location", "Condition", "Status", "Purchase Cost"
+        ])
+        
+        header = self.asset_table.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(6, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(7, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(8, QHeaderView.ResizeMode.ResizeToContents)
+        
+        layout.addWidget(self.asset_table)
+        
+    def create_summary_card(self, title: str, value: str) -> QGroupBox:
+        """Create a summary card widget."""
+        card = QGroupBox(title)
+        layout = QVBoxLayout(card)
+        
+        value_label = QLabel(value)
+        value_label.setFont(QFont("Arial", 16, QFont.Weight.Bold))
+        value_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        value_label.setStyleSheet("color: #D4AF37; padding: 10px;")
+        
+        layout.addWidget(value_label)
+        card.value_label = value_label  # Store reference for updates
+        
+        return card
+        
+    def load_data(self):
+        """Load asset data."""
+        self.load_assets()
+        self.update_summary()
+        
+    def load_assets(self):
+        """Load asset data into table."""
+        try:
+            from models import get_assets
+            with get_db_session() as session:
+                assets = get_assets(session)
+                
+                self.asset_table.setRowCount(len(assets))
+                
+                for row, asset in enumerate(assets):
+                    self.asset_table.setItem(row, 0, QTableWidgetItem(asset.asset_tag))
+                    self.asset_table.setItem(row, 1, QTableWidgetItem(asset.name))
+                    self.asset_table.setItem(row, 2, QTableWidgetItem(asset.asset_type.value))
+                    self.asset_table.setItem(row, 3, QTableWidgetItem(asset.manufacturer or ""))
+                    self.asset_table.setItem(row, 4, QTableWidgetItem(asset.model or ""))
+                    self.asset_table.setItem(row, 5, QTableWidgetItem(asset.location or ""))
+                    self.asset_table.setItem(row, 6, QTableWidgetItem(asset.condition))
+                    self.asset_table.setItem(row, 7, QTableWidgetItem(asset.status.value))
+                    self.asset_table.setItem(row, 8, QTableWidgetItem(f"${asset.purchase_cost:,.2f}"))
+                    
+        except Exception as e:
+            logger.error(f"Error loading assets: {e}")
+            
+    def update_summary(self):
+        """Update summary cards."""
+        try:
+            from models import get_assets
+            with get_db_session() as session:
+                assets = get_assets(session)
+                
+                total_assets = len(assets)
+                active_assets = len([a for a in assets if a.status.value == 'active'])
+                total_value = sum(asset.purchase_cost for asset in assets)
+                
+                self.total_assets_card.value_label.setText(str(total_assets))
+                self.active_assets_card.value_label.setText(str(active_assets))
+                self.total_value_card.value_label.setText(f"${total_value:,.2f}")
+                
+                # Demo: random maintenance due count
+                import random
+                maintenance_due = random.randint(0, max(1, total_assets // 5))
+                self.maintenance_due_card.value_label.setText(str(maintenance_due))
+                
+        except Exception as e:
+            logger.error(f"Error updating asset summary: {e}")
+            
+    def filter_assets(self):
+        """Filter assets by type and status."""
+        type_filter = self.asset_type_filter.currentText()
+        status_filter = self.status_filter.currentText()
+        
+        for row in range(self.asset_table.rowCount()):
+            type_item = self.asset_table.item(row, 2)
+            status_item = self.asset_table.item(row, 7)
+            
+            show_row = True
+            
+            if type_filter != "All Types" and type_item:
+                show_row = show_row and (type_filter.lower() in type_item.text().lower())
+                
+            if status_filter != "All Status" and status_item:
+                show_row = show_row and (status_filter.lower() in status_item.text().lower())
+                
+            self.asset_table.setRowHidden(row, not show_row)
+            
+    def add_asset(self):
+        """Add new asset dialog."""
+        QMessageBox.information(self, "Coming Soon", 
+                              "Asset creation dialog will be implemented in the next phase.")
+        
+    def refresh_data(self):
+        """Refresh all data."""
+        self.load_data()

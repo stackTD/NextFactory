@@ -676,12 +676,402 @@ class DataSeeder:
                         logger.info(f"Created quality check: {qc_data['check_number']}")
                 
                 session.commit()
+                
+                # Create Phase 3 optional module data
+                self.create_phase3_demo_data(session, admin_user, manager_user, operator_user)
+                
                 return True
                 
         except Exception as e:
             logger.error(f"Error creating ERP/MES data: {e}")
             self.stats['errors'] += 1
             return False
+
+    def create_phase3_demo_data(self, session, admin_user, manager_user, operator_user):
+        """Create demo data for Phase 3 optional modules."""
+        try:
+            from models import (
+                Customer, SalesOrder, Asset, Resource, ProductionBatch, TraceabilityRecord,
+                MaintenanceRecord, Employee, ShiftTemplate, ShiftAssignment,
+                AssetTypeEnum, ResourceTypeEnum, MaintenanceTypeEnum, StatusEnum,
+                OrderStatusEnum, PriorityEnum
+            )
+            
+            # Create sample customers for Sales & CRM
+            customers_data = [
+                {
+                    'customer_code': 'CUST001',
+                    'company_name': 'Acme Manufacturing Corp',
+                    'contact_person': 'John Anderson',
+                    'email': 'j.anderson@acme-mfg.com',
+                    'phone': '+1-555-0201',
+                    'address': '123 Industrial Blvd, Manufacturing City, MC 12345',
+                    'credit_limit': 50000.0,
+                },
+                {
+                    'customer_code': 'CUST002',
+                    'company_name': 'TechParts Solutions',
+                    'contact_person': 'Sarah Williams',
+                    'email': 'sarah.w@techparts.com',
+                    'phone': '+1-555-0202',
+                    'address': '456 Tech Park Ave, Innovation Town, IT 67890',
+                    'credit_limit': 75000.0,
+                },
+                {
+                    'customer_code': 'CUST003',
+                    'company_name': 'Global Industries Ltd',
+                    'contact_person': 'Michael Chen',
+                    'email': 'mchen@globalind.com',
+                    'phone': '+1-555-0203',
+                    'address': '789 Global Way, Metro City, MC 54321',
+                    'credit_limit': 100000.0,
+                },
+            ]
+            
+            for customer_data in customers_data:
+                existing = session.query(Customer).filter_by(customer_code=customer_data['customer_code']).first()
+                if not existing or self.force_recreate:
+                    if existing and self.force_recreate:
+                        session.delete(existing)
+                    customer = Customer(**customer_data)
+                    session.add(customer)
+                    logger.info(f"Created customer: {customer_data['company_name']}")
+            
+            session.commit()
+            
+            # Create sample sales orders
+            sales_orders_data = [
+                {
+                    'order_number': 'SO-2024-001',
+                    'customer_id': 1,
+                    'total_amount': 25000.0,
+                    'status': OrderStatusEnum.CONFIRMED,
+                    'priority': PriorityEnum.HIGH,
+                    'requested_delivery': datetime.utcnow() + timedelta(days=30),
+                    'notes': 'Rush order for Q1 delivery',
+                },
+                {
+                    'order_number': 'SO-2024-002',
+                    'customer_id': 2,
+                    'total_amount': 18500.0,
+                    'status': OrderStatusEnum.IN_PROGRESS,
+                    'priority': PriorityEnum.MEDIUM,
+                    'requested_delivery': datetime.utcnow() + timedelta(days=45),
+                    'notes': 'Standard delivery timeline',
+                },
+            ]
+            
+            for order_data in sales_orders_data:
+                existing = session.query(SalesOrder).filter_by(order_number=order_data['order_number']).first()
+                if not existing or self.force_recreate:
+                    if existing and self.force_recreate:
+                        session.delete(existing)
+                    order = SalesOrder(**order_data)
+                    session.add(order)
+                    logger.info(f"Created sales order: {order_data['order_number']}")
+            
+            session.commit()
+            
+            # Create sample assets for Asset Management
+            assets_data = [
+                {
+                    'asset_tag': 'CNC-001',
+                    'name': 'CNC Milling Machine #1',
+                    'description': 'High precision CNC milling machine',
+                    'asset_type': AssetTypeEnum.MACHINE,
+                    'manufacturer': 'Haas Automation',
+                    'model': 'VF-2SS',
+                    'serial_number': 'HA2024001',
+                    'purchase_date': datetime.utcnow() - timedelta(days=365),
+                    'purchase_cost': 85000.0,
+                    'location': 'Production Floor A',
+                    'condition': 'Excellent',
+                },
+                {
+                    'asset_tag': 'PRESS-001',
+                    'name': 'Hydraulic Press #1',
+                    'description': '100-ton hydraulic press',
+                    'asset_type': AssetTypeEnum.MACHINE,
+                    'manufacturer': 'Schuler Group',
+                    'model': 'HP-100',
+                    'serial_number': 'SG2023005',
+                    'purchase_date': datetime.utcnow() - timedelta(days=500),
+                    'purchase_cost': 120000.0,
+                    'location': 'Production Floor B',
+                    'condition': 'Good',
+                },
+                {
+                    'asset_tag': 'TOOL-SET-001',
+                    'name': 'Precision Tool Set A',
+                    'description': 'Complete precision machining tool set',
+                    'asset_type': AssetTypeEnum.TOOL,
+                    'manufacturer': 'Sandvik',
+                    'model': 'PS-COMPLETE-01',
+                    'serial_number': 'SV2024012',
+                    'purchase_date': datetime.utcnow() - timedelta(days=180),
+                    'purchase_cost': 15000.0,
+                    'location': 'Tool Crib',
+                    'condition': 'Excellent',
+                },
+            ]
+            
+            for asset_data in assets_data:
+                existing = session.query(Asset).filter_by(asset_tag=asset_data['asset_tag']).first()
+                if not existing or self.force_recreate:
+                    if existing and self.force_recreate:
+                        session.delete(existing)
+                    asset = Asset(**asset_data)
+                    session.add(asset)
+                    logger.info(f"Created asset: {asset_data['name']}")
+            
+            session.commit()
+            
+            # Create sample resources for Resource Allocation
+            resources_data = [
+                {
+                    'resource_code': 'RES-CNC-001',
+                    'name': 'CNC Machine Operator Station',
+                    'resource_type': ResourceTypeEnum.EQUIPMENT,
+                    'capacity': 1.0,
+                    'unit': 'machine-hours',
+                    'hourly_rate': 75.0,
+                    'location': 'Production Floor A',
+                },
+                {
+                    'resource_code': 'RES-OP-001',
+                    'name': 'Skilled Machine Operator',
+                    'resource_type': ResourceTypeEnum.PERSONNEL,
+                    'capacity': 8.0,
+                    'unit': 'hours',
+                    'hourly_rate': 35.0,
+                    'location': 'Production Floor',
+                },
+                {
+                    'resource_code': 'RES-WS-001',
+                    'name': 'Assembly Workstation #1',
+                    'resource_type': ResourceTypeEnum.WORKSPACE,
+                    'capacity': 1.0,
+                    'unit': 'workstation-hours',
+                    'hourly_rate': 25.0,
+                    'location': 'Assembly Area',
+                },
+            ]
+            
+            for resource_data in resources_data:
+                existing = session.query(Resource).filter_by(resource_code=resource_data['resource_code']).first()
+                if not existing or self.force_recreate:
+                    if existing and self.force_recreate:
+                        session.delete(existing)
+                    resource = Resource(**resource_data)
+                    session.add(resource)
+                    logger.info(f"Created resource: {resource_data['name']}")
+            
+            session.commit()
+            
+            # Create sample production batches for Product Tracking
+            batches_data = [
+                {
+                    'batch_number': 'BATCH-2024-001',
+                    'product_name': 'Industrial Pump Model X1',
+                    'quantity': 50.0,
+                    'unit': 'units',
+                    'start_date': datetime.utcnow() - timedelta(days=5),
+                    'end_date': datetime.utcnow() - timedelta(days=1),
+                    'status': 'Completed',
+                    'quality_grade': 'A',
+                    'notes': 'High quality batch, all specs met',
+                },
+                {
+                    'batch_number': 'BATCH-2024-002',
+                    'product_name': 'Control Panel Series C',
+                    'quantity': 25.0,
+                    'unit': 'units',
+                    'start_date': datetime.utcnow() - timedelta(days=3),
+                    'status': 'In Progress',
+                    'quality_grade': 'A',
+                    'notes': 'On schedule, quality looks good',
+                },
+            ]
+            
+            for batch_data in batches_data:
+                existing = session.query(ProductionBatch).filter_by(batch_number=batch_data['batch_number']).first()
+                if not existing or self.force_recreate:
+                    if existing and self.force_recreate:
+                        session.delete(existing)
+                    batch = ProductionBatch(**batch_data)
+                    session.add(batch)
+                    logger.info(f"Created production batch: {batch_data['batch_number']}")
+            
+            session.commit()
+            
+            # Create sample maintenance records
+            maintenance_data = [
+                {
+                    'work_order': 'WO-2024-001',
+                    'asset_id': 1,  # CNC Machine
+                    'maintenance_type': MaintenanceTypeEnum.PREVENTIVE,
+                    'priority': PriorityEnum.MEDIUM,
+                    'status': 'Scheduled',
+                    'scheduled_date': datetime.utcnow() + timedelta(days=7),
+                    'technician_id': operator_user.id,
+                    'description': 'Monthly preventive maintenance - lubrication and inspection',
+                    'cost': 500.0,
+                },
+                {
+                    'work_order': 'WO-2024-002',
+                    'asset_id': 2,  # Hydraulic Press
+                    'maintenance_type': MaintenanceTypeEnum.CORRECTIVE,
+                    'priority': PriorityEnum.HIGH,
+                    'status': 'Completed',
+                    'scheduled_date': datetime.utcnow() - timedelta(days=2),
+                    'actual_start': datetime.utcnow() - timedelta(days=2, hours=8),
+                    'actual_end': datetime.utcnow() - timedelta(days=2, hours=4),
+                    'technician_id': operator_user.id,
+                    'description': 'Repair hydraulic leak in main cylinder',
+                    'cost': 1200.0,
+                    'notes': 'Replaced seals and tested system',
+                },
+            ]
+            
+            for maint_data in maintenance_data:
+                existing = session.query(MaintenanceRecord).filter_by(work_order=maint_data['work_order']).first()
+                if not existing or self.force_recreate:
+                    if existing and self.force_recreate:
+                        session.delete(existing)
+                    maintenance = MaintenanceRecord(**maint_data)
+                    session.add(maintenance)
+                    logger.info(f"Created maintenance record: {maint_data['work_order']}")
+            
+            session.commit()
+            
+            # Create sample employees for Labor Management
+            employees_data = [
+                {
+                    'employee_id': 'EMP001',
+                    'user_id': operator_user.id,
+                    'first_name': 'John',
+                    'last_name': 'Smith',
+                    'department': 'Production',
+                    'position': 'Machine Operator',
+                    'hire_date': datetime.utcnow() - timedelta(days=1000),
+                    'hourly_rate': 28.50,
+                    'skill_level': 'Level 3',
+                },
+                {
+                    'employee_id': 'EMP002',
+                    'user_id': manager_user.id,
+                    'first_name': 'Jane',
+                    'last_name': 'Manager',
+                    'department': 'Production',
+                    'position': 'Production Manager',
+                    'hire_date': datetime.utcnow() - timedelta(days=1500),
+                    'hourly_rate': 45.00,
+                    'skill_level': 'Level 5',
+                },
+                {
+                    'employee_id': 'EMP003',
+                    'first_name': 'Bob',
+                    'last_name': 'Wilson',
+                    'department': 'Quality',
+                    'position': 'Quality Inspector',
+                    'hire_date': datetime.utcnow() - timedelta(days=800),
+                    'hourly_rate': 32.00,
+                    'skill_level': 'Level 4',
+                },
+            ]
+            
+            for emp_data in employees_data:
+                existing = session.query(Employee).filter_by(employee_id=emp_data['employee_id']).first()
+                if not existing or self.force_recreate:
+                    if existing and self.force_recreate:
+                        session.delete(existing)
+                    employee = Employee(**emp_data)
+                    session.add(employee)
+                    logger.info(f"Created employee: {emp_data['first_name']} {emp_data['last_name']}")
+            
+            session.commit()
+            
+            # Create sample shift templates
+            shift_templates_data = [
+                {
+                    'name': 'Day Shift',
+                    'start_time': '08:00',
+                    'end_time': '16:00',
+                    'duration_hours': 8.0,
+                    'break_duration': 0.5,
+                    'description': 'Standard day shift 8AM-4PM',
+                },
+                {
+                    'name': 'Evening Shift',
+                    'start_time': '16:00',
+                    'end_time': '00:00',
+                    'duration_hours': 8.0,
+                    'break_duration': 0.5,
+                    'description': 'Evening shift 4PM-12AM',
+                },
+                {
+                    'name': 'Night Shift',
+                    'start_time': '00:00',
+                    'end_time': '08:00',
+                    'duration_hours': 8.0,
+                    'break_duration': 0.5,
+                    'description': 'Night shift 12AM-8AM',
+                },
+            ]
+            
+            for template_data in shift_templates_data:
+                existing = session.query(ShiftTemplate).filter_by(name=template_data['name']).first()
+                if not existing or self.force_recreate:
+                    if existing and self.force_recreate:
+                        session.delete(existing)
+                    template = ShiftTemplate(**template_data)
+                    session.add(template)
+                    logger.info(f"Created shift template: {template_data['name']}")
+            
+            session.commit()
+            
+            # Create sample shift assignments
+            shift_assignments_data = [
+                {
+                    'employee_id': 1,
+                    'shift_template_id': 1,  # Day Shift
+                    'date': datetime.utcnow().date(),
+                    'status': 'Scheduled',
+                },
+                {
+                    'employee_id': 2,
+                    'shift_template_id': 1,  # Day Shift
+                    'date': datetime.utcnow().date(),
+                    'status': 'Scheduled',
+                },
+                {
+                    'employee_id': 3,
+                    'shift_template_id': 2,  # Evening Shift
+                    'date': datetime.utcnow().date(),
+                    'status': 'Scheduled',
+                },
+            ]
+            
+            for assign_data in shift_assignments_data:
+                # Check if assignment already exists
+                existing = session.query(ShiftAssignment).filter_by(
+                    employee_id=assign_data['employee_id'],
+                    date=assign_data['date']
+                ).first()
+                if not existing or self.force_recreate:
+                    if existing and self.force_recreate:
+                        session.delete(existing)
+                    assignment = ShiftAssignment(**assign_data)
+                    session.add(assignment)
+                    logger.info(f"Created shift assignment for employee {assign_data['employee_id']}")
+            
+            session.commit()
+            logger.info("Phase 3 demo data created successfully")
+            
+        except Exception as e:
+            logger.error(f"Error creating Phase 3 demo data: {e}")
+            # Don't fail the entire seeding process for Phase 3 data errors
+            pass
 
     def seed_all_data(self) -> bool:
         """
