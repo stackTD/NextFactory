@@ -2,9 +2,41 @@
 
 This guide provides comprehensive instructions for setting up PostgreSQL database for the NextFactory ERP+MES Exhibition Demo.
 
+## 🚀 Quick Start - Autonomous Setup (Recommended)
+
+For the fastest setup experience, use our autonomous setup script:
+
+```bash
+python setup_postgres.py
+```
+
+This single command will:
+- ✅ Check and install all dependencies
+- ✅ Install and configure PostgreSQL 
+- ✅ Create database, users, and roles
+- ✅ Set up all Phase 3 modules and demo data
+- ✅ Test the complete installation
+- ✅ Provide ready-to-use exhibition demo
+
+**Perfect for exhibitions, demos, and quick deployments!**
+
+---
+
+## Manual Setup (Alternative Method)
+
+If you prefer manual setup or need custom configuration, follow the detailed instructions below.
+
 ## Overview
 
-NextFactory uses PostgreSQL as its primary database system, providing robust data management for ERP and MES operations. The database setup includes user management, role-based access control, and inventory management foundations.
+NextFactory uses PostgreSQL as its primary database system, providing robust data management for ERP and MES operations. The database setup includes user management, role-based access control, and comprehensive Phase 3 modules including:
+
+### Phase 3 Optional Modules
+- **ERP: Sales & CRM** – Customer orders, relationships, order history
+- **ERP: Asset Management** – Track machines, tools, asset status
+- **MES: Resource Allocation** – Assign/monitor resources, auto-allocation
+- **MES: Product Tracking & Traceability** – Log genealogy, audit/export
+- **MES: Maintenance Management** – Schedule/track maintenance, alerts
+- **MES: Labor Management** – Worker schedules, shift templates, performance
 
 ## Prerequisites
 
